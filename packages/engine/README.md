@@ -1,4 +1,4 @@
-# @plantagoai/yoursim
+# @plantagoai/yoursim-engine
 
 A **zero-dependency** TypeScript discrete-event simulation (DES) engine for
 service, queue, and network systems. No DOM, no Node-specific APIs — the same
@@ -121,7 +121,7 @@ and the per-type `*Params`.
 ## Minimal usage
 
 ```ts
-import { runExperiment, type SimModel } from '@plantagoai/yoursim';
+import { runExperiment, type SimModel } from '@plantagoai/yoursim-engine';
 
 const model: SimModel = {
   schemaVersion: 1,

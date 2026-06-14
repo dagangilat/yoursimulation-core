@@ -1,5 +1,5 @@
 {
-  "name": "@plantagoai/yoursim",
+  "name": "@plantagoai/yoursim-engine",
   "version": "0.1.0",
   "description": "Discrete-event simulation engine + CLI: model service/queue/network systems, estimate waits/utilization/throughput, and optimize designs against a budget and service targets.",
   "type": "module",
