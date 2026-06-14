@@ -13,7 +13,7 @@ targets.
 ## Mental model
 
 The engine simulates entities (passengers, packets, patients, jobs…) flowing
-through a network of **11 generic node types**. Five cover most models:
+through a network of **12 generic node types**. Five cover most models:
 
 | Node | Role | Maps to (examples) |
 | --- | --- | --- |
@@ -31,6 +31,10 @@ Six more unlock advanced behaviour:
 | `seize` / `release` | Acquire / return units of a shared **resource pool** | a nurse/bed/OR/forklift held across multiple steps or shared model-wide |
 | `assign` | Set an attribute or `priority` from a sampled value | stamp a class/acuity/QoS after arrival, then route by it |
 | `batch` / `separate` | Combine N→1 / split a batch back (or duplicate) | shuttle-when-full, pallet/kit assembly, packet aggregation, fork-join |
+| `match` | Assemble one entity of each part type into one | order+payment, patient+chart+clinician, product from components |
+
+`resource` also supports `preemption` (urgent work bumps a server) and `failures`
+(breakdowns: uptime/repair, with availability reporting).
 
 **Resource pools** (top-level `resources: [{id, capacity}]`) are named capacity that
 `seize`/`release` reference by id — capacity that can be **held across steps** and
@@ -99,6 +103,12 @@ Example models to copy/adapt: `references/examples/airport.json`,
   out-edge. For load balancing across parallel lines, use a `shortest-queue` branch.
 - **Batching** — `batch` (size, permanent/temporary) then optionally `separate`
   to restore members downstream.
+- **Assembly** — tag parts with `assign` (e.g. `part`=1, `part`=2), then `match`
+  with `parts: [1,2]` waits for one of each and emits a combined entity.
+- **Preemption** — set `preemption: "resume"` on a resource so urgent (lower
+  priority number) work bumps a lower-priority job off a server.
+- **Breakdowns** — set `failures: { uptime, repair }` on a resource; check the
+  reported `availability` ≈ mean(uptime)/(mean(uptime)+mean(repair)).
 
 ## Run the CLI
 

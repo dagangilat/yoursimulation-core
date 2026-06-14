@@ -30,6 +30,12 @@ A **waiting line** in front of a server.
 
 - `servers` — number of parallel servers (≥ 1)
 - `service` — service-time distribution
+- `preemption` *(optional)* — `resume` or `restart`: a higher-priority arrival bumps
+  the weakest in-service entity off a server when full (emergency seizes a bed, rush
+  order, CPU). `resume` keeps the victim's remaining work; `restart` resamples it.
+- `failures` *(optional)* — `{ uptime, repair }` **breakdowns**: the server alternates
+  up and down; while down it serves nothing and in-progress work pauses, resuming on
+  repair. Steady-state availability = mean(uptime)/(mean(uptime)+mean(repair)).
 
 > A resource bundles *seize + service + release*. To hold capacity across several
 > steps or share it across the model, use a **resource pool** with seize/release instead.
@@ -92,6 +98,16 @@ Use it to stamp a class/acuity/type after arrival — then route on it with a
   earliest member's age. Models shuttle-when-full, pallet/kit assembly, packet aggregation.
 - **Separate** — `split-batch` restores a temporary batch's members (each with its
   original age); `duplicate` clones an entity into `copies` (fork / multicast).
+
+### Match
+**Assembles** distinct part types into one. Tag each part upstream with `assign`
+(e.g. `part` = 1, `part` = 2), then a `match` with `parts: [1, 2]` waits until it holds
+one entity of *each* value and emits a combined entity carrying them as members (a later
+**Separate** can split them). Models a product built from components, or an order that
+needs both the goods and the payment.
+
+- `key` — the attribute that names the part type
+- `parts` — the values to assemble one of each
 
 ## A model that uses the new blocks
 

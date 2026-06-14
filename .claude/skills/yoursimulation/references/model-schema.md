@@ -54,12 +54,12 @@ positions if you want the file to look right in the UI.
 
 The engine `RunSettings` uses only `horizon`, `warmup`, `replications`, `seed`.
 
-## Node types (11)
+## Node types (12)
 
 Every node: `{ "id": string, "type": NodeType, "label?": string, "position": {x,y}, "params": {...} }`.
-`id` must be a non-empty string and unique across the model. The 11 types:
+`id` must be a non-empty string and unique across the model. The 12 types:
 `source`, `queue`, `resource`, `delay`, `seize`, `release`, `assign`, `batch`,
-`separate`, `branch`, `sink`.
+`separate`, `match`, `branch`, `sink`.
 
 ### source
 Generates arriving entities from an inter-arrival distribution. Model
@@ -88,10 +88,17 @@ A waiting line. Buffers entities before a resource (or wherever they flow).
 ### resource
 Servers that hold an entity for a service time (seize + service + release in one).
 ```json
-"params": { "servers": int >= 1, "service": <distribution> }
+"params": {
+  "servers": int >= 1,
+  "service": <distribution>,
+  "preemption?": "resume" | "restart",
+  "failures?": { "uptime": <distribution>, "repair": <distribution> }
+}
 ```
 - `servers` (required, integer `>= 1`): number of parallel servers.
 - `service` (required): service-time distribution.
+- `preemption` (optional): a higher-priority arrival **bumps** the weakest in-service entity off a server when full. `resume` keeps the victim's remaining service; `restart` resamples it. (Reports `preemptions`.)
+- `failures` (optional): **breakdowns**. The resource alternates up (for `uptime`) and down (for `repair`); while down it serves nothing and in-progress work is paused, resuming on repair. Steady-state availability = mean(uptime)/(mean(uptime)+mean(repair)) (reported as `availability`).
 - A resource MUST be fed by a queue (see validation rules).
 - For capacity held **across multiple steps** or **shared** elsewhere, use a resource pool with seize/delay/release instead.
 
@@ -143,6 +150,17 @@ Split a temporary batch back into its members, or duplicate an entity.
 ```
 - `split-batch` (default): re-emits a temporary batch's members (each with its original age). A non-batch passes through unchanged.
 - `duplicate`: emits `copies` (default 2) independent clones (fork/multicast).
+
+### match
+**Assemble** entities of different types into one. Waits until it holds one entity
+of *each* value in `parts` (read from `attributes[key]`), then emits one combined
+entity carrying them as members (a later `separate` can split them).
+```json
+"params": { "key": "part", "parts": [1, 2, 3] }
+```
+- Tag the parts upstream with `assign` (e.g. `assign to=part value=const 1`).
+- Entities whose part value isn't in `parts` are dropped.
+- Models assembly that needs distinct parts: patient + chart + clinician; order + payment; product from components.
 
 ### branch
 Router. Routing depends on `mode`:
@@ -207,7 +225,7 @@ Building a model (`buildSimulation`, and the CLI's `validate`/`run`) throws if a
 1. **Unique node ids** — no duplicate `id` across nodes.
 2. **Edges reference existing nodes** — every edge's `from` and `to` must be a known node id.
 3. **Sinks have no out-edges** — a `sink` cannot have any outgoing edge.
-4. **Exactly one out-edge for flow nodes** — every node that is NOT a `sink` and NOT a `branch` (i.e. `source`, `queue`, `resource`, `delay`, `seize`, `release`, `assign`, `batch`, `separate`) must have exactly one outgoing edge.
+4. **Exactly one out-edge for flow nodes** — every node that is NOT a `sink` and NOT a `branch` (i.e. `source`, `queue`, `resource`, `delay`, `seize`, `release`, `assign`, `batch`, `separate`, `match`) must have exactly one outgoing edge.
 5. **Branch out-edges** — a `branch` needs at least one out-edge. In `probability` mode the `probability` values must sum to 1 (within 1e-9; a missing probability is invalid). In `by-attribute` mode `key` is required and at most one out-edge may be value-less (the default).
 6. **Resources fed by a queue** — every edge into a `resource` must come from a `queue`. (Put a queue in front of every resource. `seize` does NOT need this — it has its own wait list.)
 7. **No instantaneous loops** — queues and branches forward entities at the same simulation instant; a cycle made only of queues/branches is rejected. Route such loops through a resource/delay/seize (which consume time).
@@ -215,6 +233,7 @@ Building a model (`buildSimulation`, and the CLI's `validate`/`run`) throws if a
 9. **Seize/release** — `pool` must reference an existing pool; `units` (if given) is an integer `>= 1`; a `seize` cannot request more units than the pool's capacity.
 10. **No held-resource leaks** — at run time, an entity reaching a `sink` while still holding pool units is an error. Every seized unit must be released on every path to a sink.
 11. **Batch/separate** — `batch` `size` is an integer `>= 1`; `separate` `copies` (duplicate mode) is an integer `>= 1`.
+12. **Match** — needs a `key` and a non-empty `parts` array. Tag part values upstream with `assign`.
 
 ## Minimal valid model
 
