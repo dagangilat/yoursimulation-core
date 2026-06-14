@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "name": "Factory line — assemble parts, machine with breakdowns + rush-job preemption, palletize",
+  "settings": { "timeUnit": "min", "horizon": 1200, "warmup": 120, "replications": 12, "seed": 7 },
+  "presentation": { "theme": "logistics" },
+  "nodes": [
+    { "id": "bodies", "type": "source", "label": "Bodies", "position": { "x": 0, "y": 80 },
+      "params": { "interarrival": { "dist": "exp", "mean": 4 } } },
+    { "id": "tagBody", "type": "assign", "label": "part = body", "position": { "x": 160, "y": 80 },
+      "params": { "to": "part", "value": { "dist": "const", "value": 1 } } },
+    { "id": "lids", "type": "source", "label": "Lids", "position": { "x": 0, "y": 220 },
+      "params": { "interarrival": { "dist": "exp", "mean": 4 } } },
+    { "id": "tagLid", "type": "assign", "label": "part = lid", "position": { "x": 160, "y": 220 },
+      "params": { "to": "part", "value": { "dist": "const", "value": 2 } } },
+
+    { "id": "assemble", "type": "match", "label": "Assemble", "position": { "x": 340, "y": 150 },
+      "params": { "key": "part", "parts": [1, 2] } },
+    { "id": "tier", "type": "assign", "label": "Express / standard", "position": { "x": 500, "y": 150 },
+      "params": { "to": "priority", "value": { "dist": "empirical", "values": [1, 5], "weights": [0.2, 0.8] } } },
+
+    { "id": "mill-q", "type": "queue", "label": "Machine queue", "position": { "x": 660, "y": 150 },
+      "params": { "discipline": "priority" } },
+    { "id": "mill", "type": "resource", "label": "CNC mill", "position": { "x": 820, "y": 150 },
+      "params": {
+        "servers": 2,
+        "service": { "dist": "triangular", "min": 3, "mode": 5, "max": 9 },
+        "preemption": "resume",
+        "failures": { "uptime": { "dist": "exp", "mean": 120 }, "repair": { "dist": "exp", "mean": 15 } }
+      } },
+
+    { "id": "qc", "type": "branch", "label": "Quality check", "position": { "x": 1000, "y": 150 },
+      "params": { "mode": "probability" } },
+    { "id": "pallet", "type": "batch", "label": "Palletize ×6", "position": { "x": 1180, "y": 80 },
+      "params": { "size": 6, "mode": "permanent" } },
+    { "id": "shipped", "type": "sink", "label": "Shipped", "position": { "x": 1340, "y": 80 }, "params": {} },
+    { "id": "scrap", "type": "sink", "label": "Scrapped", "position": { "x": 1180, "y": 240 }, "params": {} }
+  ],
+  "edges": [
+    { "id": "e1", "from": "bodies", "to": "tagBody" },
+    { "id": "e2", "from": "tagBody", "to": "assemble" },
+    { "id": "e3", "from": "lids", "to": "tagLid" },
+    { "id": "e4", "from": "tagLid", "to": "assemble" },
+    { "id": "e5", "from": "assemble", "to": "tier" },
+    { "id": "e6", "from": "tier", "to": "mill-q" },
+    { "id": "e7", "from": "mill-q", "to": "mill" },
+    { "id": "e8", "from": "mill", "to": "qc" },
+    { "id": "e9", "from": "qc", "to": "pallet", "probability": 0.92 },
+    { "id": "e10", "from": "qc", "to": "scrap", "probability": 0.08 },
+    { "id": "e11", "from": "pallet", "to": "shipped" }
+  ]
+}

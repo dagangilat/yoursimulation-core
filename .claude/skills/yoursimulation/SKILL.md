@@ -84,10 +84,12 @@ small generator script** that prints model JSON to stdout, instead of hand-writi
 hundreds of nodes. See `references/examples/generate-network.ts` for the pattern,
 then pipe its output straight into the CLI (see stdin below).
 
-Example models to copy/adapt: `references/examples/airport.json`,
-`references/examples/network.json`, and `references/examples/clinic-pool.json`
-(shows resource pools + seize/delay/release, queue reneging, `assign`, and
-`by-attribute` routing in one valid model).
+Example models to copy/adapt (in `references/examples/`): `airport.json` (textbook
+M/M/c), `clinic-pool.json` (pools + seize/delay/release, reneging, by-attribute
+routing), `bank.json` (shortest-queue + priority + reneging), `factory-line.json`
+(match assembly + preemption + breakdowns + batch), `restaurant.json` (batch +
+separate + balking), and `network.json`. Together the five domain models use every
+node type — see the docs "Example domain models" page for the coverage matrix.
 
 ### Advanced patterns (quick recipes)
 - **Hold one resource across steps / share it** — declare a top-level pool

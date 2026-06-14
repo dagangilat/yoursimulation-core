@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "name": "Bank branch — join-shortest-queue tellers, VIP priority, impatient customers",
+  "settings": { "timeUnit": "min", "horizon": 600, "warmup": 60, "replications": 12, "seed": 42 },
+  "presentation": { "theme": "generic" },
+  "nodes": [
+    { "id": "customers", "type": "source", "label": "Customers", "position": { "x": 0, "y": 160 },
+      "params": { "interarrival": { "dist": "exp", "mean": 1.2 } } },
+    { "id": "tier", "type": "assign", "label": "VIP / regular", "position": { "x": 160, "y": 160 },
+      "params": { "to": "priority", "value": { "dist": "empirical", "values": [1, 5], "weights": [0.15, 0.85] } } },
+    { "id": "pick", "type": "branch", "label": "Pick shortest line", "position": { "x": 320, "y": 160 },
+      "params": { "mode": "shortest-queue" } },
+
+    { "id": "q1", "type": "queue", "label": "Line 1", "position": { "x": 480, "y": 40 },
+      "params": { "discipline": "priority", "reneging": { "patience": { "dist": "exp", "mean": 12 } } } },
+    { "id": "t1", "type": "resource", "label": "Teller 1", "position": { "x": 640, "y": 40 },
+      "params": { "servers": 1, "service": { "dist": "lognormal", "mu": 1.0, "sigma": 0.5 } } },
+
+    { "id": "q2", "type": "queue", "label": "Line 2", "position": { "x": 480, "y": 160 },
+      "params": { "discipline": "priority", "reneging": { "patience": { "dist": "exp", "mean": 12 } } } },
+    { "id": "t2", "type": "resource", "label": "Teller 2", "position": { "x": 640, "y": 160 },
+      "params": { "servers": 1, "service": { "dist": "lognormal", "mu": 1.0, "sigma": 0.5 } } },
+
+    { "id": "q3", "type": "queue", "label": "Line 3", "position": { "x": 480, "y": 280 },
+      "params": { "discipline": "priority", "reneging": { "patience": { "dist": "exp", "mean": 12 } } } },
+    { "id": "t3", "type": "resource", "label": "Teller 3", "position": { "x": 640, "y": 280 },
+      "params": { "servers": 1, "service": { "dist": "lognormal", "mu": 1.0, "sigma": 0.5 } } },
+
+    { "id": "done", "type": "sink", "label": "Served", "position": { "x": 820, "y": 160 }, "params": {} }
+  ],
+  "edges": [
+    { "id": "e1", "from": "customers", "to": "tier" },
+    { "id": "e2", "from": "tier", "to": "pick" },
+    { "id": "e3", "from": "pick", "to": "q1" },
+    { "id": "e4", "from": "pick", "to": "q2" },
+    { "id": "e5", "from": "pick", "to": "q3" },
+    { "id": "e6", "from": "q1", "to": "t1" },
+    { "id": "e7", "from": "q2", "to": "t2" },
+    { "id": "e8", "from": "q3", "to": "t3" },
+    { "id": "e9", "from": "t1", "to": "done" },
+    { "id": "e10", "from": "t2", "to": "done" },
+    { "id": "e11", "from": "t3", "to": "done" }
+  ]
+}

@@ -15,6 +15,7 @@ export default defineConfig({
     nav: [
       { text: 'Guide', link: '/tutorial' },
       { text: 'Blocks', link: '/blocks' },
+      { text: 'Examples', link: '/examples' },
       { text: 'Theory', link: '/theory/01-discrete-event-simulation' },
       { text: 'Architecture', link: '/architecture' },
       { text: 'App', link: 'https://yoursimulation-app.web.app' },
@@ -26,6 +27,7 @@ export default defineConfig({
           { text: 'Overview', link: '/' },
           { text: 'Tutorial: model an airport', link: '/tutorial' },
           { text: 'Blocks reference', link: '/blocks' },
+          { text: 'Example domain models', link: '/examples' },
           { text: 'Glossary', link: '/glossary' },
         ],
       },
