@@ -9,4 +9,6 @@ export interface Entity {
   attributes?: Record<string, number>;
   /** Members of a temporary batch, restored by a later separate. */
   members?: Entity[];
+  /** Service time left after a preempt-resume; consumed on the next service start. */
+  remainingService?: number;
 }

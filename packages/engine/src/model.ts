@@ -29,6 +29,9 @@ export interface QueueParams {
 export interface ResourceParams {
   servers: number;
   service: Distribution;
+  /** Let a higher-priority arrival bump a lower one off a server when full.
+   *  `resume` keeps the victim's remaining service; `restart` resamples it. */
+  preemption?: 'resume' | 'restart';
 }
 
 /** Pure time advance with no capacity contention (infinite-server). */

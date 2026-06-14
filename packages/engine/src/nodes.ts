@@ -15,8 +15,8 @@ export interface NodeContext {
   out(nodeId: string): RuntimeNode;
   /** All downstream nodes with their edge probability/value (branch nodes). */
   outs(nodeId: string): { node: RuntimeNode; probability: number; value?: number }[];
-  /** Queues feeding this node, for pull-on-release. */
-  upstreamQueues(nodeId: string): { dispatch(): void }[];
+  /** Queues feeding this node, for pull-on-release and re-queuing preempted entities. */
+  upstreamQueues(nodeId: string): (RuntimeNode & { dispatch(): void })[];
   rngFor(nodeId: string): Random;
   /** Shared resource pool by id, for seize/release. */
   pool(id: string): ResourcePoolRuntime;
@@ -29,7 +29,7 @@ export abstract class RuntimeNode {
     protected readonly ctx: NodeContext,
   ) {}
 
-  canAccept(): boolean {
+  canAccept(_forPriority?: number): boolean {
     return true;
   }
 
@@ -167,10 +167,23 @@ export class QueueNode extends RuntimeNode {
     this.renegeHandles.set(e.id, handle);
   }
 
-  /** Push waiting entities downstream while it can accept. Resources call this on release. */
+  /** The entity pop() would choose next, without removing it. */
+  private peekNext(): Entity {
+    const d = this.p.discipline ?? 'fifo';
+    if (d === 'fifo') return this.items[0]!;
+    if (d === 'lifo') return this.items[this.items.length - 1]!;
+    let best = 0;
+    for (let i = 1; i < this.items.length; i++) {
+      if (this.items[i]!.priority < this.items[best]!.priority) best = i;
+    }
+    return this.items[best]!;
+  }
+
+  /** Push waiting entities downstream while it can accept (passing the candidate's
+   *  priority so a preemptive resource can decide to bump a lower-priority entity). */
   dispatch(): void {
     const down = this.ctx.out(this.id);
-    while (this.items.length > 0 && down.canAccept()) {
+    while (this.items.length > 0 && down.canAccept(this.peekNext().priority)) {
       const e = this.pop();
       this.renegeHandles.get(e.id)?.cancel();
       this.renegeHandles.delete(e.id);
@@ -212,8 +225,15 @@ export class QueueNode extends RuntimeNode {
   }
 }
 
+interface InService {
+  entity: Entity;
+  handle: EventHandle;
+  completionTime: number;
+}
+
 export class ResourceNode extends RuntimeNode {
-  private busy = 0;
+  private inService: InService[] = [];
+  preemptions = 0;
   readonly utilization: TimeWeighted;
 
   constructor(id: string, ctx: NodeContext, private readonly p: ResourceParams) {
@@ -221,25 +241,52 @@ export class ResourceNode extends RuntimeNode {
     this.utilization = new TimeWeighted(ctx.sim);
   }
 
-  override canAccept(): boolean {
-    return this.busy < this.p.servers;
+  private get busy(): number {
+    return this.inService.length;
+  }
+
+  override canAccept(forPriority?: number): boolean {
+    if (this.busy < this.p.servers) return true;
+    // Full: a preemptive resource still accepts an arrival that outranks its
+    // weakest in-service entity (strict <, so equal priority does not preempt).
+    if (this.p.preemption !== undefined && forPriority !== undefined)
+      return forPriority < this.weakestServedPriority();
+    return false;
   }
 
   override congestion(): number {
     return this.busy;
   }
 
+  private weakestServedPriority(): number {
+    let w = -Infinity;
+    for (const s of this.inService) if (s.entity.priority > w) w = s.entity.priority;
+    return w;
+  }
+
   override receive(e: Entity): void {
-    if (!this.canAccept())
-      throw new Error(`resource ${this.id} received an entity while full`);
-    this.busy++;
+    if (this.busy >= this.p.servers) {
+      // canAccept() guaranteed a preemption is allowed. Bump the weakest victim,
+      // start the arrival (refilling the slot), THEN re-queue the victim so it
+      // doesn't immediately bounce back into the now-full resource.
+      const victim = this.preemptWeakest();
+      this.startService(e);
+      this.requeue(victim);
+    } else {
+      this.startService(e);
+    }
+  }
+
+  private startService(e: Entity): void {
+    const serviceTime = e.remainingService ?? sample(this.p.service, this.ctx.rngFor(this.id));
+    e.remainingService = undefined;
+    const entry: InService = { entity: e, handle: { cancel() {} }, completionTime: this.ctx.sim.clock + serviceTime };
+    this.inService.push(entry);
     this.utilization.update(this.busy / this.p.servers);
     this.ctx.emit?.({ kind: 'server', t: this.ctx.sim.clock, nodeId: this.id, busy: this.busy, servers: this.p.servers });
-    const serviceTime = sample(this.p.service, this.ctx.rngFor(this.id));
-    this.ctx.sim.schedule(serviceTime, () => {
-      this.busy--;
+    entry.handle = this.ctx.sim.schedule(serviceTime, () => {
+      this.inService = this.inService.filter((s) => s !== entry);
       this.utilization.update(this.busy / this.p.servers);
-      // Forward before pulling upstream so a freed slot is visible to the next entity.
       this.ctx.emit?.({ kind: 'server', t: this.ctx.sim.clock, nodeId: this.id, busy: this.busy, servers: this.p.servers });
       const dest = this.ctx.out(this.id);
       this.ctx.emit?.({ kind: 'move', t: this.ctx.sim.clock, entityId: e.id, from: this.id, to: dest.id });
@@ -248,14 +295,35 @@ export class ResourceNode extends RuntimeNode {
     });
   }
 
+  private preemptWeakest(): Entity {
+    let idx = 0;
+    for (let i = 1; i < this.inService.length; i++) {
+      if (this.inService[i]!.entity.priority > this.inService[idx]!.entity.priority) idx = i;
+    }
+    const entry = this.inService.splice(idx, 1)[0]!;
+    entry.handle.cancel();
+    this.preemptions++;
+    this.utilization.update(this.busy / this.p.servers);
+    if (this.p.preemption === 'resume')
+      entry.entity.remainingService = entry.completionTime - this.ctx.sim.clock;
+    // 'restart' → leave remainingService unset so the next service resamples.
+    return entry.entity;
+  }
+
+  private requeue(victim: Entity): void {
+    const ups = this.ctx.upstreamQueues(this.id);
+    if (ups.length > 0) ups[0]!.receive(victim);
+  }
+
   override summary(): Record<string, number> {
-    return { utilization: this.utilization.mean() };
+    return { utilization: this.utilization.mean(), preemptions: this.preemptions };
   }
 
   // servers >= 1 is assumed (schema validation owns the guard).
   override resetStats(): void {
     this.utilization.reset();
     this.utilization.update(this.busy / this.p.servers);
+    this.preemptions = 0;
   }
 }
 
