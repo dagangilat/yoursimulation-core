@@ -1,7 +1,7 @@
 import { Random, streamSeed } from './random.js';
 import { Simulation } from './simulation.js';
-import { RuntimeNode, SinkNode, SourceNode, QueueNode, ResourceNode, BranchNode, DelayNode, SeizeNode, ReleaseNode, AssignNode, BatchNode, SeparateNode, ResourcePoolRuntime, type NodeContext } from './nodes.js';
-import type { SimModel, SourceParams, QueueParams, ResourceParams, DelayParams, SeizeParams, ReleaseParams, AssignParams, BranchParams, BatchParams, SeparateParams } from './model.js';
+import { RuntimeNode, SinkNode, SourceNode, QueueNode, ResourceNode, BranchNode, DelayNode, SeizeNode, ReleaseNode, AssignNode, BatchNode, SeparateNode, MatchNode, ResourcePoolRuntime, type NodeContext } from './nodes.js';
+import type { SimModel, SourceParams, QueueParams, ResourceParams, DelayParams, SeizeParams, ReleaseParams, AssignParams, BranchParams, BatchParams, SeparateParams, MatchParams } from './model.js';
 
 export interface BuiltSimulation {
   sim: Simulation;
@@ -52,6 +52,12 @@ function validate(model: SimModel): void {
       const sp = n.params as SeparateParams;
       if (sp.mode === 'duplicate' && sp.copies !== undefined && !(Number.isInteger(sp.copies) && sp.copies >= 1))
         throw new Error(`separate ${n.id} copies must be an integer >= 1`);
+    }
+    if (n.type === 'match') {
+      const mp = n.params as MatchParams;
+      if (!mp.key) throw new Error(`match ${n.id} needs a key`);
+      if (!Array.isArray(mp.parts) || mp.parts.length < 1)
+        throw new Error(`match ${n.id} needs a non-empty parts list`);
     }
   }
   // Resources must be fed by queues so entities always have somewhere to wait.
@@ -202,6 +208,8 @@ function makeNode(
       return new BatchNode(id, ctx, params as BatchParams);
     case 'separate':
       return new SeparateNode(id, ctx, params as SeparateParams);
+    case 'match':
+      return new MatchNode(id, ctx, params as MatchParams);
     case 'delay':
       return new DelayNode(id, ctx, params as DelayParams);
     case 'seize':

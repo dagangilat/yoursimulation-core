@@ -23,6 +23,7 @@ export type {
   BranchParams,
   BatchParams,
   SeparateParams,
+  MatchParams,
   SinkParams,
 } from './model.js';
 export { buildSimulation, type BuiltSimulation } from './build.js';

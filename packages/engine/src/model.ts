@@ -11,7 +11,8 @@ export type NodeType =
   | 'release'
   | 'assign'
   | 'batch'
-  | 'separate';
+  | 'separate'
+  | 'match';
 
 export interface SourceParams {
   interarrival: Distribution;
@@ -32,6 +33,10 @@ export interface ResourceParams {
   /** Let a higher-priority arrival bump a lower one off a server when full.
    *  `resume` keeps the victim's remaining service; `restart` resamples it. */
   preemption?: 'resume' | 'restart';
+  /** Breakdowns: the resource alternates up (for `uptime`) and down (for `repair`).
+   *  While down it serves nothing; in-progress work is paused and resumed on repair.
+   *  Steady-state availability = mean(uptime) / (mean(uptime) + mean(repair)). */
+  failures?: { uptime: Distribution; repair: Distribution };
 }
 
 /** Pure time advance with no capacity contention (infinite-server). */
@@ -83,6 +88,14 @@ export interface SeparateParams {
   copies?: number; // for duplicate; default 2
 }
 
+/** Assemble: wait for one entity of each `parts` value (read from `attributes[key]`),
+ *  then emit one combined entity carrying them as members. Tag parts upstream with
+ *  `assign`. Entities whose part value is not in `parts` are dropped. */
+export interface MatchParams {
+  key: string;
+  parts: number[];
+}
+
 export type SinkParams = Record<string, never>;
 
 export type NodeParams =
@@ -96,6 +109,7 @@ export type NodeParams =
   | BranchParams
   | BatchParams
   | SeparateParams
+  | MatchParams
   | SinkParams;
 
 export interface ModelNode {

@@ -4,7 +4,7 @@ import type { Entity } from './entity.js';
 import type { Random } from './random.js';
 import type { Simulation } from './simulation.js';
 import type { EventHandle } from './calendar.js';
-import type { SourceParams, QueueParams, ResourceParams, DelayParams, SeizeParams, ReleaseParams, AssignParams, BranchParams, BatchParams, SeparateParams } from './model.js';
+import type { SourceParams, QueueParams, ResourceParams, DelayParams, SeizeParams, ReleaseParams, AssignParams, BranchParams, BatchParams, SeparateParams, MatchParams } from './model.js';
 import type { SimEvent } from './events.js';
 
 /** Services the runtime nodes need; implemented by build.ts. */
@@ -233,19 +233,55 @@ interface InService {
 
 export class ResourceNode extends RuntimeNode {
   private inService: InService[] = [];
+  private paused: Entity[] = [];
+  private up = true;
   preemptions = 0;
   readonly utilization: TimeWeighted;
+  readonly availability: TimeWeighted;
 
   constructor(id: string, ctx: NodeContext, private readonly p: ResourceParams) {
     super(id, ctx);
     this.utilization = new TimeWeighted(ctx.sim);
+    this.availability = new TimeWeighted(ctx.sim);
+    this.availability.update(1);
   }
 
   private get busy(): number {
     return this.inService.length;
   }
 
+  override start(): void {
+    if (this.p.failures) this.scheduleFailure();
+  }
+
+  /** Break down: pause in-service work, schedule repair, then come back up. */
+  private scheduleFailure(): void {
+    const upFor = sample(this.p.failures!.uptime, this.ctx.rngFor(`${this.id}:uptime`));
+    this.ctx.sim.schedule(upFor, () => {
+      this.up = false;
+      this.availability.update(0);
+      for (const s of this.inService) {
+        s.handle.cancel();
+        s.entity.remainingService = s.completionTime - this.ctx.sim.clock;
+        this.paused.push(s.entity);
+      }
+      this.inService = [];
+      this.utilization.update(this.busy / this.p.servers);
+      const downFor = sample(this.p.failures!.repair, this.ctx.rngFor(`${this.id}:repair`));
+      this.ctx.sim.schedule(downFor, () => {
+        this.up = true;
+        this.availability.update(1);
+        const resume = this.paused;
+        this.paused = [];
+        for (const e of resume) this.startService(e); // uses remainingService
+        this.scheduleFailure();
+        for (const q of this.ctx.upstreamQueues(this.id)) q.dispatch(); // refill freed slots
+      });
+    });
+  }
+
   override canAccept(forPriority?: number): boolean {
+    if (this.p.failures && !this.up) return false; // broken: accept nothing
     if (this.busy < this.p.servers) return true;
     // Full: a preemptive resource still accepts an arrival that outranks its
     // weakest in-service entity (strict <, so equal priority does not preempt).
@@ -316,13 +352,17 @@ export class ResourceNode extends RuntimeNode {
   }
 
   override summary(): Record<string, number> {
-    return { utilization: this.utilization.mean(), preemptions: this.preemptions };
+    const s: Record<string, number> = { utilization: this.utilization.mean(), preemptions: this.preemptions };
+    if (this.p.failures) s['availability'] = this.availability.mean();
+    return s;
   }
 
   // servers >= 1 is assumed (schema validation owns the guard).
   override resetStats(): void {
     this.utilization.reset();
     this.utilization.update(this.busy / this.p.servers);
+    this.availability.reset();
+    this.availability.update(this.up ? 1 : 0);
     this.preemptions = 0;
   }
 }
@@ -477,6 +517,48 @@ export class SeparateNode extends RuntimeNode {
 
   override resetStats(): void {
     this.emitted = 0;
+  }
+}
+
+/** Assemble: hold one entity per `parts` value (by `attributes[key]`); when every
+ *  part is present, emit one combined entity carrying them as `members`. */
+export class MatchNode extends RuntimeNode {
+  matched = 0;
+  private buffers = new Map<number, Entity[]>();
+
+  constructor(id: string, ctx: NodeContext, private readonly p: MatchParams) {
+    super(id, ctx);
+    for (const v of p.parts) this.buffers.set(v, []);
+  }
+
+  override receive(e: Entity): void {
+    const v = e.attributes?.[this.p.key];
+    const buf = v === undefined ? undefined : this.buffers.get(v);
+    if (!buf) return; // part value not declared in `parts` — dropped
+    buf.push(e);
+    for (const part of this.p.parts) {
+      if (this.buffers.get(part)!.length === 0) return; // still waiting on some part
+    }
+    const members = this.p.parts.map((part) => this.buffers.get(part)!.shift()!);
+    const combined: Entity = {
+      id: this.ctx.nextEntityId(),
+      createdAt: Math.min(...members.map((m) => m.createdAt)),
+      priority: Math.min(...members.map((m) => m.priority)),
+      enqueuedAt: 0,
+      members,
+    };
+    this.matched++;
+    const dest = this.ctx.out(this.id);
+    this.ctx.emit?.({ kind: 'move', t: this.ctx.sim.clock, entityId: combined.id, from: this.id, to: dest.id });
+    dest.receive(combined);
+  }
+
+  override summary(): Record<string, number> {
+    return { matched: this.matched };
+  }
+
+  override resetStats(): void {
+    this.matched = 0;
   }
 }
 
