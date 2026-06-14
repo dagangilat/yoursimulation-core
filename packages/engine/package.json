@@ -1,14 +1,45 @@
 {
   "name": "@yoursim/engine",
   "version": "0.1.0",
-  "private": true,
+  "description": "Discrete-event simulation engine + CLI: model service/queue/network systems, estimate waits/utilization/throughput, and optimize designs against a budget and service targets.",
   "type": "module",
-  "main": "src/index.ts",
+  "license": "MIT",
+  "author": "Dagan Gilat <feedmyinfo@gmail.com>",
+  "homepage": "https://github.com/dagangilat/yoursimulation-core",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dagangilat/yoursimulation-core.git",
+    "directory": "packages/engine"
+  },
+  "keywords": [
+    "discrete-event-simulation",
+    "des",
+    "queueing",
+    "simulation",
+    "optimization",
+    "operations-research"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
+    "@types/node": "^22.10.0",
     "tsx": "^4.22.4",
     "typescript": "^5.6.0",
     "vitest": "^4.1.8"
