@@ -24,7 +24,7 @@ export default defineConfig({
       { text: 'Examples', link: '/examples' },
       { text: 'Theory', link: '/theory/01-discrete-event-simulation' },
       { text: 'Tutorial', link: '/tutorial' },
-      { text: 'Try the app', link: 'https://yoursimulation-app.web.app' },
+      { text: 'Try the app', link: 'https://yoursim.plantagoai.com' },
     ],
     sidebar: [
       {

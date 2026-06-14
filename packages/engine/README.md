@@ -10,10 +10,10 @@ You describe a system as a graph of five generic node types — `source`, `queue
 confidence intervals, record a single run for playback, or optimize parameters
 against a budget and service targets.
 
-- Concepts: [discrete-event simulation](https://yoursimulation-app.web.app/docs/theory/01-discrete-event-simulation),
-  [queueing theory](https://yoursimulation-app.web.app/docs/theory/02-queueing-theory),
-  [distributions](https://yoursimulation-app.web.app/docs/theory/03-distributions),
-  [Cross-Entropy optimization](https://yoursimulation-app.web.app/docs/theory/04-cross-entropy).
+- Concepts: [discrete-event simulation](https://yoursim-engine.plantagoai.com/theory/01-discrete-event-simulation),
+  [queueing theory](https://yoursim-engine.plantagoai.com/theory/02-queueing-theory),
+  [distributions](https://yoursim-engine.plantagoai.com/theory/03-distributions),
+  [Cross-Entropy optimization](https://yoursim-engine.plantagoai.com/theory/04-cross-entropy).
 - Full model schema: [`.claude/skills/yoursimulation/references/model-schema.md`](../../.claude/skills/yoursimulation/references/model-schema.md).
 
 ## Public API
@@ -157,4 +157,4 @@ npx tsx packages/engine/src/cli.ts run docs/examples/mm1.json --pretty
 Commands: `validate`, `run`, `optimize <problem.json>`, `record`. Settings come
 from the model's `settings` block or `--horizon --warmup --replications --seed`;
 add `--pretty` for indented JSON. See the
-[tutorial](https://yoursimulation-app.web.app/docs/tutorial).
+[tutorial](https://yoursim-engine.plantagoai.com/tutorial).

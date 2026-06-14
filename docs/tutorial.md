@@ -155,7 +155,7 @@ by the engine.
 
 ## In the app
 
-You don't have to use the CLI. In the [web app](https://yoursimulation-app.web.app):
+You don't have to use the CLI. In the [web app](https://yoursim.plantagoai.com):
 
 1. Load the **Airport** starter (it is exactly the model above).
 2. Use the **Experiment** tab to run it and see the KPI dashboard with the same

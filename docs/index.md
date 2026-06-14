@@ -16,7 +16,7 @@ hero:
       link: /examples
     - theme: alt
       text: Try the app
-      link: https://yoursimulation-app.web.app
+      link: https://yoursim.plantagoai.com
 features:
   - title: 12 building blocks
     details: source, queue, resource, delay, seize/release (+ resource pools), assign, batch, separate, match, branch, sink — compose any service or network system.
