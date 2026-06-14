@@ -1,0 +1,8 @@
+{
+  "hosting": {
+    "site": "yoursim-engine",
+    "public": "docs/.vitepress/dist",
+    "cleanUrls": true,
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+  }
+}
