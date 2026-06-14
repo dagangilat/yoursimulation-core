@@ -13,15 +13,29 @@ targets.
 ## Mental model
 
 The engine simulates entities (passengers, packets, patients, jobs…) flowing
-through a network of **5 generic node types**:
+through a network of **11 generic node types**. Five cover most models:
 
 | Node | Role | Maps to (examples) |
 | --- | --- | --- |
 | `source` | Generates arrivals from an inter-arrival distribution | passengers arriving, clients/traffic, incoming calls, jobs released |
-| `queue` | Waiting line (FIFO/LIFO/priority, optional capacity) | check-in line, network buffer, hold queue, WIP buffer |
+| `queue` | Waiting line (FIFO/LIFO/priority, optional capacity, optional reneging) | check-in line, network buffer, hold queue, WIP buffer |
 | `resource` | Servers that hold an entity for a service time | check-in desks, a router/link, agents, machines |
-| `branch` | Probabilistic router (weights on out-edges) | traffic routing, triage, product mix |
+| `branch` | Router: probability / shortest-queue / by-attribute | traffic routing, triage, load balancing, product mix |
 | `sink` | Exit; records throughput + time-in-system | boarding, delivered packets, discharged patients |
+
+Six more unlock advanced behaviour:
+
+| Node | Role | Use when |
+| --- | --- | --- |
+| `delay` | Infinite-server pure time advance (no contention) | transport/travel time, propagation latency, mandatory observation |
+| `seize` / `release` | Acquire / return units of a shared **resource pool** | a nurse/bed/OR/forklift held across multiple steps or shared model-wide |
+| `assign` | Set an attribute or `priority` from a sampled value | stamp a class/acuity/QoS after arrival, then route by it |
+| `batch` / `separate` | Combine N→1 / split a batch back (or duplicate) | shuttle-when-full, pallet/kit assembly, packet aggregation, fork-join |
+
+**Resource pools** (top-level `resources: [{id, capacity}]`) are named capacity that
+`seize`/`release` reference by id — capacity that can be **held across steps** and
+**shared** across the model. A plain `resource` is just sugar for
+`seize → delay(service) → release`.
 
 Key modeling idea: **arrivals/clients/traffic are an arrival-RATE distribution on
 a single `source`, NOT one node per arriving entity.** A million packets is one
@@ -31,7 +45,10 @@ Map any domain onto these nodes. E.g. a data network:
 clients → `source`, edge/buffer → `queue`, router/link → `resource`,
 routing to destinations → `branch`, destination → `sink`.
 
-Every resource must be fed by a queue (give entities somewhere to wait).
+Every `resource` must be fed by a queue (give entities somewhere to wait). A
+`seize` does not — it has its own internal wait list. Every `seize` must be
+matched by a `release` on every path to a sink (held units that reach a sink are
+an error).
 
 ## Author a model
 
@@ -64,7 +81,24 @@ hundreds of nodes. See `references/examples/generate-network.ts` for the pattern
 then pipe its output straight into the CLI (see stdin below).
 
 Example models to copy/adapt: `references/examples/airport.json`,
-`references/examples/network.json`.
+`references/examples/network.json`, and `references/examples/clinic-pool.json`
+(shows resource pools + seize/delay/release, queue reneging, `assign`, and
+`by-attribute` routing in one valid model).
+
+### Advanced patterns (quick recipes)
+- **Hold one resource across steps / share it** — declare a top-level pool
+  `"resources": [{ "id": "nurses", "capacity": 4 }]`, then
+  `seize(nurses) → delay → … → delay → release(nurses)`. Use a seize `priority`
+  so urgent work preempts the wait order. Every seize needs a matching release.
+- **Pure travel/latency time** — use `delay`, never a big-`servers` resource.
+- **Abandonment** — put `reneging: { patience }` on the **queue that feeds a
+  resource** (reneging happens while waiting for a finite server; a queue in front
+  of a `seize` passes through instantly, so put patience where the real wait is).
+- **Class-based routing** — `assign` an attribute (e.g. `acuity` via an
+  `empirical` distribution), then a `by-attribute` branch with `value` on each
+  out-edge. For load balancing across parallel lines, use a `shortest-queue` branch.
+- **Batching** — `batch` (size, permanent/temporary) then optionally `separate`
+  to restore members downstream.
 
 ## Run the CLI
 

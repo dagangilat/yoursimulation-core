@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "name": "Emergency clinic — shared beds, acuity routing, reneging registration",
+  "settings": { "timeUnit": "min", "horizon": 600, "warmup": 60, "replications": 10, "seed": 42 },
+  "presentation": { "theme": "hospital" },
+  "resources": [{ "id": "beds", "capacity": 3 }],
+  "nodes": [
+    { "id": "arrivals", "type": "source", "label": "Patients", "position": { "x": 0, "y": 120 },
+      "params": { "interarrival": { "dist": "exp", "mean": 6 } } },
+
+    { "id": "reg-q", "type": "queue", "label": "Registration line", "position": { "x": 160, "y": 120 },
+      "params": { "reneging": { "patience": { "dist": "exp", "mean": 20 } } } },
+    { "id": "reg-desk", "type": "resource", "label": "Registration", "position": { "x": 320, "y": 120 },
+      "params": { "servers": 1, "service": { "dist": "triangular", "min": 1, "mode": 2, "max": 4 } } },
+
+    { "id": "triage", "type": "assign", "label": "Triage acuity", "position": { "x": 480, "y": 120 },
+      "params": { "to": "acuity", "value": { "dist": "empirical", "values": [1, 2], "weights": [0.25, 0.75] } } },
+    { "id": "route", "type": "branch", "label": "By acuity", "position": { "x": 640, "y": 120 },
+      "params": { "mode": "by-attribute", "key": "acuity" } },
+
+    { "id": "seize-u", "type": "seize", "label": "Bed (urgent)", "position": { "x": 800, "y": 40 },
+      "params": { "pool": "beds", "priority": 1 } },
+    { "id": "treat-u", "type": "delay", "label": "Treat (urgent)", "position": { "x": 960, "y": 40 },
+      "params": { "delay": { "dist": "exp", "mean": 18 } } },
+    { "id": "release-u", "type": "release", "label": "Free bed", "position": { "x": 1120, "y": 40 },
+      "params": { "pool": "beds" } },
+
+    { "id": "seize-r", "type": "seize", "label": "Bed (routine)", "position": { "x": 800, "y": 200 },
+      "params": { "pool": "beds", "priority": 5 } },
+    { "id": "treat-r", "type": "delay", "label": "Treat (routine)", "position": { "x": 960, "y": 200 },
+      "params": { "delay": { "dist": "exp", "mean": 12 } } },
+    { "id": "release-r", "type": "release", "label": "Free bed", "position": { "x": 1120, "y": 200 },
+      "params": { "pool": "beds" } },
+
+    { "id": "discharged", "type": "sink", "label": "Discharged", "position": { "x": 1280, "y": 120 }, "params": {} }
+  ],
+  "edges": [
+    { "id": "e1", "from": "arrivals", "to": "reg-q" },
+    { "id": "e2", "from": "reg-q", "to": "reg-desk" },
+    { "id": "e3", "from": "reg-desk", "to": "triage" },
+    { "id": "e4", "from": "triage", "to": "route" },
+    { "id": "e5", "from": "route", "to": "seize-u", "value": 1 },
+    { "id": "e6", "from": "route", "to": "seize-r", "value": 2 },
+    { "id": "e7", "from": "seize-u", "to": "treat-u" },
+    { "id": "e8", "from": "treat-u", "to": "release-u" },
+    { "id": "e9", "from": "release-u", "to": "discharged" },
+    { "id": "e10", "from": "seize-r", "to": "treat-r" },
+    { "id": "e11", "from": "treat-r", "to": "release-r" },
+    { "id": "e12", "from": "release-r", "to": "discharged" }
+  ]
+}

@@ -14,6 +14,7 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/tutorial' },
+      { text: 'Blocks', link: '/blocks' },
       { text: 'Theory', link: '/theory/01-discrete-event-simulation' },
       { text: 'Architecture', link: '/architecture' },
       { text: 'App', link: 'https://yoursimulation-app.web.app' },
@@ -24,6 +25,7 @@ export default defineConfig({
         items: [
           { text: 'Overview', link: '/' },
           { text: 'Tutorial: model an airport', link: '/tutorial' },
+          { text: 'Blocks reference', link: '/blocks' },
           { text: 'Glossary', link: '/glossary' },
         ],
       },

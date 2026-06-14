@@ -45,6 +45,16 @@ $$W_q = \frac{C(c,\, \lambda/\mu)}{c\mu - \lambda}$$
 
 The Erlang-C formula itself is standard; the docs don't re-derive it. (The validation suite computes it directly to check the engine — see [`validation.test.ts`](https://github.com/dagangilat/yoursimulation/blob/main/packages/engine/test/validation.test.ts).)
 
+## Beyond M/M/c: abandonment and routing
+
+Real systems rarely make customers wait forever, and rarely have a single line. Two extensions matter most, and YourSimulation models both.
+
+**Abandonment (reneging) — the Erlang-A model.** Add impatience to M/M/c and you get **M/M/c+M**, known as **Erlang-A**: each waiting customer also has an exponential *patience* and abandons if service doesn't start in time. Closed forms exist but are unwieldy; the practical effect is intuitive — abandonment acts as a relief valve, so the system stays stable even when $\rho \ge 1$ (offered load above capacity), at the cost of lost customers. In a model this is a queue's `reneging: { patience }`. The behaviour is easy to sanity-check: under light load almost no one abandons (waits match M/M/c); as load climbs, the abandonment rate rises smoothly.
+
+**Routing — join-shortest-queue.** With several parallel servers you can keep one shared line (M/M/c) *or* split arrivals across separate lines. Sending each arrival to the **shortest** line (JSQ) is near-optimal and, for a symmetric system, keeps the lines balanced so their utilizations converge. A `branch` in `shortest-queue` mode does exactly this — measuring whole-station occupancy (waiting + in service) with random tie-breaks. Probabilistic splitting, by contrast, lets lines drift out of balance and performs worse under the same load.
+
+See the [Blocks reference](/blocks) for how to wire reneging, routing, shared resource pools, and batching into a model.
+
 ## Validation
 
 These checks live in [`packages/engine/test/validation.test.ts`](https://github.com/dagangilat/yoursimulation/blob/main/packages/engine/test/validation.test.ts) and run on every commit, asserting the engine matches theory within tolerance (utilization to ±0.03, waits to ±10%). The "Engine" column below is the actual simulator output (`mean ± ci95`):

@@ -1,0 +1,112 @@
+# Blocks reference
+
+A YourSimulation model is a graph of **blocks** (nodes) connected by **edges**.
+Entities — passengers, packets, patients, jobs — flow from a `source` to a `sink`,
+and the blocks in between shape how they wait, get served, route, and combine.
+
+There are **11 block types**. Five cover most models; six add advanced behaviour.
+
+## The essentials
+
+### Source
+Generates arrivals from an **inter-arrival distribution**. Model a whole stream of
+arrivals as *one* source with a rate — never one node per arriving entity.
+
+- `interarrival` — time between arrivals (e.g. `{ "dist": "exp", "mean": 5 }`)
+- `priority` *(optional)* — stamped on every entity (lower = higher priority)
+- `maxArrivals` *(optional)* — stop after this many
+
+### Queue
+A **waiting line** in front of a server.
+
+- `discipline` — `fifo` (default), `lifo`, or `priority` (lowest priority number first)
+- `capacity` *(optional)* — when full, new arrivals **balk** (leave immediately)
+- `reneging: { patience }` *(optional)* — an entity **abandons** the line if it hasn't
+  started service within a sampled patience time. This is how you model call-centre
+  or emergency-department abandonment (the Erlang-A model).
+
+### Resource
+**Servers** that hold an entity for a service time. A resource must be fed by a queue.
+
+- `servers` — number of parallel servers (≥ 1)
+- `service` — service-time distribution
+
+> A resource bundles *seize + service + release*. To hold capacity across several
+> steps or share it across the model, use a **resource pool** with seize/release instead.
+
+### Branch
+A **router**. Its `mode` decides how:
+
+- `probability` *(default)* — each out-edge carries a `probability`; they sum to 1
+- `shortest-queue` — send to the least-busy downstream line (**join-shortest-queue** /
+  load balancing); ties broken randomly
+- `by-attribute` — route by an entity attribute: set `key`, and give each out-edge a
+  `value`; a value-less edge is the default
+
+### Sink
+The **exit**. Records throughput and time-in-system. No parameters, no out-edges.
+
+## Time and shared resources
+
+### Delay
+**Pure time advance with no contention** — infinite-server. Every entity gets its own
+timer; nothing ever waits. Use for transport/travel time, network propagation latency,
+or a mandatory observation period. (Don't fake this with a high-`servers` resource.)
+
+- `delay` — the holding-time distribution
+
+### Seize / Release + Resource pools
+A **resource pool** is named capacity declared at the top level:
+
+```json
+"resources": [{ "id": "nurses", "capacity": 4 }]
+```
+
+A `seize` block acquires `units` of a pool and **holds them** until a later `release`.
+Because the units are held across whatever blocks sit between seize and release, you can
+model a nurse held from triage through discharge, an OR room held across prep→procedure→recovery,
+or a forklift seized to move a load and released after — and the *same* pool can be shared
+by seize points anywhere in the model.
+
+- **Seize** — `pool`, `units` *(default 1)*, `priority` *(default: the entity's own)*.
+  Has its own internal priority wait list, so it doesn't need a queue in front.
+- **Release** — `pool`, `units` *(default: all the entity holds)*.
+
+Pattern: `seize(pool) → delay(activity) → … → release(pool)`. Every seize must be
+matched by a release on every path to a sink (units that reach a sink are a modelling error).
+
+## Transform and combine
+
+### Assign
+Sets an **attribute** (or the entity's `priority`) to a sampled value, then forwards.
+Use it to stamp a class/acuity/type after arrival — then route on it with a
+`by-attribute` branch.
+
+- `to` — `"priority"`, or any attribute name (e.g. `"acuity"`)
+- `value` — a distribution. `const` gives a fixed value; `empirical` gives a random
+  class (e.g. 25% urgent / 75% routine).
+
+### Batch / Separate
+- **Batch** — accumulate `size` entities into one. `permanent` (default) discards the
+  members; `temporary` keeps them for a later separate. The representative inherits the
+  earliest member's age. Models shuttle-when-full, pallet/kit assembly, packet aggregation.
+- **Separate** — `split-batch` restores a temporary batch's members (each with its
+  original age); `duplicate` clones an entity into `copies` (fork / multicast).
+
+## A model that uses the new blocks
+
+The example `clinic-pool.json` (in the skill's `references/examples/`) wires several of
+these together: arrivals → a registration queue **with reneging** → a registration
+**resource** → an **assign** that tags acuity → a **by-attribute** branch → urgent and
+routine paths that both **seize** from a shared `beds` pool (urgent at higher priority),
+**delay** for treatment, and **release**. Run it with the CLI:
+
+```bash
+npx tsx packages/engine/src/cli.ts run clinic-pool.json --pretty
+```
+
+## See also
+
+- [Tutorial: model an airport](/tutorial) — build your first model step by step
+- [Queueing theory](/theory/02-queueing-theory) — what the metrics mean
+- [Glossary](/glossary)
