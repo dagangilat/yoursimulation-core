@@ -1,11 +1,12 @@
 import { Random, streamSeed } from './random.js';
 import { Simulation } from './simulation.js';
-import { RuntimeNode, SinkNode, SourceNode, QueueNode, ResourceNode, BranchNode, DelayNode, type NodeContext } from './nodes.js';
-import type { SimModel, SourceParams, QueueParams, ResourceParams, DelayParams } from './model.js';
+import { RuntimeNode, SinkNode, SourceNode, QueueNode, ResourceNode, BranchNode, DelayNode, SeizeNode, ReleaseNode, ResourcePoolRuntime, type NodeContext } from './nodes.js';
+import type { SimModel, SourceParams, QueueParams, ResourceParams, DelayParams, SeizeParams, ReleaseParams } from './model.js';
 
 export interface BuiltSimulation {
   sim: Simulation;
   nodes: Map<string, RuntimeNode>;
+  pools: Map<string, ResourcePoolRuntime>;
   run(until: number): void;
   resetStats(): void;
   summaries(): Record<string, Record<string, number>>;
@@ -40,6 +41,28 @@ function validate(model: SimModel): void {
     if (to.type === 'resource' && from.type !== 'queue')
       throw new Error(`resource ${to.id} must be fed by a queue (got ${from.type} ${from.id})`);
   }
+  // Resource pools: unique ids, distinct from node ids, positive capacity.
+  const poolIds = new Set<string>();
+  for (const pool of model.resources ?? []) {
+    if (poolIds.has(pool.id)) throw new Error(`duplicate pool id: ${pool.id}`);
+    if (ids.has(pool.id)) throw new Error(`pool id ${pool.id} collides with a node id`);
+    poolIds.add(pool.id);
+    if (!(Number.isInteger(pool.capacity) && pool.capacity >= 1))
+      throw new Error(`pool ${pool.id} capacity must be an integer >= 1`);
+  }
+  // Seize/release must reference a pool; a seize cannot ask for more than capacity.
+  for (const n of model.nodes) {
+    if (n.type === 'seize' || n.type === 'release') {
+      const p = n.params as { pool?: string; units?: number };
+      if (p.pool === undefined || !poolIds.has(p.pool))
+        throw new Error(`${n.type} ${n.id} references unknown pool: ${p.pool}`);
+      if (p.units !== undefined && !(Number.isInteger(p.units) && p.units >= 1))
+        throw new Error(`${n.type} ${n.id} units must be an integer >= 1`);
+      const cap = (model.resources ?? []).find((r) => r.id === p.pool)!.capacity;
+      if (n.type === 'seize' && (p.units ?? 1) > cap)
+        throw new Error(`seize ${n.id} requests ${p.units} units but pool ${p.pool} has capacity ${cap}`);
+    }
+  }
   // Queues and branches forward entities within the same instant; a cycle made
   // only of them would recurse forever at a single simulation time.
   const flowThrough = new Set(
@@ -69,6 +92,10 @@ export function buildSimulation(
   validate(model);
   const sim = new Simulation();
   const nodes = new Map<string, RuntimeNode>();
+  const pools = new Map<string, ResourcePoolRuntime>();
+  for (const pool of model.resources ?? []) {
+    pools.set(pool.id, new ResourcePoolRuntime(pool.id, pool.capacity, sim));
+  }
   const rngs = new Map<string, Random>();
   let entityCounter = 0;
 
@@ -99,6 +126,7 @@ export function buildSimulation(
       }
       return rng;
     },
+    pool: (id) => pools.get(id)!,
     emit,
   };
 
@@ -110,6 +138,7 @@ export function buildSimulation(
   return {
     sim,
     nodes,
+    pools,
     run(until) {
       if (!started) {
         started = true;
@@ -119,10 +148,12 @@ export function buildSimulation(
     },
     resetStats() {
       for (const n of nodes.values()) n.resetStats();
+      for (const p of pools.values()) p.resetStats();
     },
     summaries() {
       const out: Record<string, Record<string, number>> = {};
       for (const [id, n] of nodes) out[id] = n.summary();
+      for (const [id, p] of pools) out[id] = p.summary();
       return out;
     },
   };
@@ -147,6 +178,10 @@ function makeNode(
       return new BranchNode(id, ctx);
     case 'delay':
       return new DelayNode(id, ctx, params as DelayParams);
+    case 'seize':
+      return new SeizeNode(id, ctx, params as SeizeParams);
+    case 'release':
+      return new ReleaseNode(id, ctx, params as ReleaseParams);
     default:
       throw new Error(`unsupported node type: ${type}`);
   }

@@ -4,7 +4,7 @@ import type { Entity } from './entity.js';
 import type { Random } from './random.js';
 import type { Simulation } from './simulation.js';
 import type { EventHandle } from './calendar.js';
-import type { SourceParams, QueueParams, ResourceParams, DelayParams } from './model.js';
+import type { SourceParams, QueueParams, ResourceParams, DelayParams, SeizeParams, ReleaseParams } from './model.js';
 import type { SimEvent } from './events.js';
 
 /** Services the runtime nodes need; implemented by build.ts. */
@@ -18,6 +18,8 @@ export interface NodeContext {
   /** Queues feeding this node, for pull-on-release. */
   upstreamQueues(nodeId: string): { dispatch(): void }[];
   rngFor(nodeId: string): Random;
+  /** Shared resource pool by id, for seize/release. */
+  pool(id: string): ResourcePoolRuntime;
   emit?(e: SimEvent): void;
 }
 
@@ -92,6 +94,12 @@ export class SinkNode extends RuntimeNode {
   readonly timeInSystem = new Tally();
 
   override receive(e: Entity): void {
+    if (e.held) {
+      for (const [poolId, units] of e.held) {
+        if (units > 0)
+          throw new Error(`entity ${e.id} reached sink ${this.id} still holding ${units} of pool ${poolId} — add a release`);
+      }
+    }
     this.departed++;
     this.departures.push(e.id);
     this.timeInSystem.record(this.ctx.sim.clock - e.createdAt);
@@ -296,5 +304,154 @@ export class DelayNode extends RuntimeNode {
     this.delayTime.reset();
     this.wip.reset();
     this.wip.update(this.inDelay);
+  }
+}
+
+interface WaitingRequest {
+  units: number;
+  priority: number;
+  seq: number;
+  grant(): void;
+}
+
+/** A named pool of interchangeable capacity, seized and released across steps. */
+export class ResourcePoolRuntime {
+  available: number;
+  readonly utilization: TimeWeighted;
+  readonly queueLen: TimeWeighted;
+  private waiting: WaitingRequest[] = [];
+  private seq = 0;
+  private dispatching = false;
+
+  constructor(readonly id: string, readonly capacity: number, sim: Simulation) {
+    this.available = capacity;
+    this.utilization = new TimeWeighted(sim);
+    this.utilization.update(0);
+    this.queueLen = new TimeWeighted(sim);
+  }
+
+  private busyFraction(): number {
+    return (this.capacity - this.available) / this.capacity;
+  }
+
+  /** Acquire `units` for `entity`, calling `onGrant` now (if free) or later (on release). */
+  request(entity: Entity, units: number, priority: number, onGrant: () => void): void {
+    const grant = (): void => {
+      this.available -= units;
+      this.utilization.update(this.busyFraction());
+      const held = entity.held ?? (entity.held = new Map());
+      held.set(this.id, (held.get(this.id) ?? 0) + units);
+      onGrant();
+    };
+    if (units <= this.available) {
+      grant();
+    } else {
+      this.waiting.push({ units, priority, seq: this.seq++, grant });
+      this.queueLen.update(this.waiting.length);
+    }
+  }
+
+  release(entity: Entity, units?: number): void {
+    const held = entity.held?.get(this.id) ?? 0;
+    const u = units ?? held;
+    if (u > held)
+      throw new Error(`release of ${u} from pool ${this.id} but entity ${entity.id} holds ${held}`);
+    this.available += u;
+    const remaining = held - u;
+    if (remaining > 0) entity.held!.set(this.id, remaining);
+    else entity.held?.delete(this.id);
+    this.utilization.update(this.busyFraction());
+    this.dispatch();
+  }
+
+  /** Grant feasible waiting requests in (priority, seq) order, skipping infeasible ones. */
+  private dispatch(): void {
+    if (this.dispatching) return; // re-entrant release; the running loop will re-scan
+    this.dispatching = true;
+    try {
+      this.waiting.sort((a, b) => a.priority - b.priority || a.seq - b.seq);
+      let i = 0;
+      while (i < this.waiting.length) {
+        const r = this.waiting[i]!;
+        if (r.units <= this.available) {
+          this.waiting.splice(i, 1);
+          this.queueLen.update(this.waiting.length);
+          r.grant();
+          i = 0; // availability changed — re-scan from the highest priority
+        } else {
+          i++;
+        }
+      }
+    } finally {
+      this.dispatching = false;
+    }
+  }
+
+  summary(): Record<string, number> {
+    return { utilization: this.utilization.mean(), avgQueue: this.queueLen.mean() };
+  }
+
+  resetStats(): void {
+    this.utilization.reset();
+    this.utilization.update(this.busyFraction());
+    this.queueLen.reset();
+    this.queueLen.update(this.waiting.length);
+  }
+}
+
+/** Acquire pool capacity, holding it until a downstream release. Has its own wait list. */
+export class SeizeNode extends RuntimeNode {
+  seized = 0;
+  readonly waitTime = new Tally();
+
+  constructor(id: string, ctx: NodeContext, private readonly p: SeizeParams) {
+    super(id, ctx);
+  }
+
+  override receive(e: Entity): void {
+    const units = this.p.units ?? 1;
+    const priority = this.p.priority ?? e.priority;
+    const t0 = this.ctx.sim.clock;
+    this.ctx.pool(this.p.pool).request(e, units, priority, () => {
+      this.seized++;
+      this.waitTime.record(this.ctx.sim.clock - t0);
+      const dest = this.ctx.out(this.id);
+      this.ctx.emit?.({ kind: 'move', t: this.ctx.sim.clock, entityId: e.id, from: this.id, to: dest.id });
+      dest.receive(e);
+    });
+  }
+
+  override summary(): Record<string, number> {
+    return { seized: this.seized, avgWait: this.waitTime.mean };
+  }
+
+  override resetStats(): void {
+    this.seized = 0;
+    this.waitTime.reset();
+  }
+}
+
+/** Return pool capacity held by the entity, then let the pool serve waiting seizers. */
+export class ReleaseNode extends RuntimeNode {
+  released = 0;
+
+  constructor(id: string, ctx: NodeContext, private readonly p: ReleaseParams) {
+    super(id, ctx);
+  }
+
+  override receive(e: Entity): void {
+    this.ctx.pool(this.p.pool).release(e, this.p.units);
+    this.released++;
+    const dest = this.ctx.out(this.id);
+    this.ctx.emit?.({ kind: 'move', t: this.ctx.sim.clock, entityId: e.id, from: this.id, to: dest.id });
+    dest.receive(e);
+  }
+
+  override summary(): Record<string, number> {
+    return { released: this.released };
+  }
+
+  override resetStats(): void {
+    this.released = 0;
   }
 }

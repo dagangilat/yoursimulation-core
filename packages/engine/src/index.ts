@@ -16,6 +16,9 @@ export type {
   QueueParams,
   ResourceParams,
   DelayParams,
+  SeizeParams,
+  ReleaseParams,
+  ResourcePool,
   BranchParams,
   SinkParams,
 } from './model.js';

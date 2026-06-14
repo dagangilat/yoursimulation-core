@@ -3,4 +3,6 @@ export interface Entity {
   createdAt: number;
   priority: number;
   enqueuedAt: number;
+  /** Pool id → units currently held (allocated lazily by seize). */
+  held?: Map<string, number>;
 }
