@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "name": "Restaurant — seat parties together, limited waiting area (balking), dine then leave",
+  "settings": { "timeUnit": "min", "horizon": 720, "warmup": 90, "replications": 12, "seed": 21 },
+  "presentation": { "theme": "restaurant" },
+  "nodes": [
+    { "id": "diners", "type": "source", "label": "Diners", "position": { "x": 0, "y": 140 },
+      "params": { "interarrival": { "dist": "exp", "mean": 2 } } },
+    { "id": "party", "type": "batch", "label": "Form party of 3", "position": { "x": 170, "y": 140 },
+      "params": { "size": 3, "mode": "temporary" } },
+    { "id": "wait", "type": "queue", "label": "Waiting area (cap 5)", "position": { "x": 340, "y": 140 },
+      "params": { "capacity": 5 } },
+    { "id": "tables", "type": "resource", "label": "Tables", "position": { "x": 510, "y": 140 },
+      "params": { "servers": 6, "service": { "dist": "triangular", "min": 35, "mode": 50, "max": 80 } } },
+    { "id": "pay", "type": "delay", "label": "Pay the bill", "position": { "x": 680, "y": 140 },
+      "params": { "delay": { "dist": "exp", "mean": 6 } } },
+    { "id": "leave", "type": "separate", "label": "Party leaves", "position": { "x": 850, "y": 140 },
+      "params": { "mode": "split-batch" } },
+    { "id": "left", "type": "sink", "label": "Departed", "position": { "x": 1020, "y": 140 }, "params": {} }
+  ],
+  "edges": [
+    { "id": "e1", "from": "diners", "to": "party" },
+    { "id": "e2", "from": "party", "to": "wait" },
+    { "id": "e3", "from": "wait", "to": "tables" },
+    { "id": "e4", "from": "tables", "to": "pay" },
+    { "id": "e5", "from": "pay", "to": "leave" },
+    { "id": "e6", "from": "leave", "to": "left" }
+  ]
+}

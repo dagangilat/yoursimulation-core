@@ -1,6 +1,6 @@
 # Distributions
 
-Every random quantity in a model — interarrival times on a [source](/glossary#source), service times on a [resource](/glossary#resource) — is drawn from a **distribution**. YourSimulation ships eight, defined in [`distributions.ts`](https://github.com/dagangilat/yoursimulation/blob/main/packages/engine/src/distributions.ts). Each is written as a small JSON object with a `dist` tag plus its parameters.
+Every random quantity in a model — interarrival times on a [source](/glossary#source), service times on a [resource](/glossary#resource) — is drawn from a **distribution**. YourSimulation ships eight, defined in [`distributions.ts`](https://github.com/dagangilat/yoursimulation-core/blob/main/packages/engine/src/distributions.ts). Each is written as a small JSON object with a `dist` tag plus its parameters.
 
 Picking the right shape matters: exponential interarrivals are the textbook default for "random independent arrivals", but real service times are usually *not* exponential, and using the wrong distribution skews waits and utilization.
 

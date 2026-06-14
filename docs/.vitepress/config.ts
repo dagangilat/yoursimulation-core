@@ -1,33 +1,35 @@
 import { defineConfig } from 'vitepress';
 
-// Docs build into the web app's dist so one `firebase deploy --only hosting`
-// ships both. Run AFTER `apps/web` build (vite empties dist). See build:all.
+// Standalone open-engine docs site (deployed from yoursimulation-core).
+// `base` is '/' for a custom domain / user-or-org Pages; for a GitHub *project*
+// Pages site (dagangilat.github.io/yoursimulation-core/) set base to
+// '/yoursimulation-core/'. outDir defaults to docs/.vitepress/dist.
 export default defineConfig({
-  title: 'YourSimulation',
-  description: 'Discrete-event simulation for service, queue, and network systems.',
-  base: '/docs/',
-  outDir: '../apps/web/dist/docs',
+  title: 'YourSimulation Engine',
+  description: 'Open-source discrete-event simulation engine — model service, queue, and network systems.',
+  base: '/',
   cleanUrls: true,
   ignoreDeadLinks: false,
   srcExclude: ['superpowers/**', '**/*.draft.md', '**/plans/**', '**/specs/**', '????-??-??-*.md'],
   markdown: { math: true },
   themeConfig: {
     nav: [
-      { text: 'Guide', link: '/tutorial' },
+      { text: 'API & CLI', link: '/api' },
       { text: 'Blocks', link: '/blocks' },
       { text: 'Examples', link: '/examples' },
       { text: 'Theory', link: '/theory/01-discrete-event-simulation' },
-      { text: 'Architecture', link: '/architecture' },
-      { text: 'App', link: 'https://yoursimulation-app.web.app' },
+      { text: 'Tutorial', link: '/tutorial' },
+      { text: 'Try the app', link: 'https://yoursimulation-app.web.app' },
     ],
     sidebar: [
       {
-        text: 'Guide',
+        text: 'Engine',
         items: [
           { text: 'Overview', link: '/' },
-          { text: 'Tutorial: model an airport', link: '/tutorial' },
+          { text: 'API & CLI', link: '/api' },
           { text: 'Blocks reference', link: '/blocks' },
           { text: 'Example domain models', link: '/examples' },
+          { text: 'Tutorial: model an airport', link: '/tutorial' },
           { text: 'Glossary', link: '/glossary' },
         ],
       },
@@ -49,6 +51,6 @@ export default defineConfig({
       },
     ],
     search: { provider: 'local' },
-    socialLinks: [{ icon: 'github', link: 'https://github.com/dagangilat/yoursimulation' }],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/dagangilat/yoursimulation-core' }],
   },
 });

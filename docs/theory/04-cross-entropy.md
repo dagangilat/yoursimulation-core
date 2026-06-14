@@ -1,6 +1,6 @@
 # Cross-Entropy optimization
 
-Running a model answers "what happens if I staff it like *this*?". Optimization answers the more useful question: "what's the **cheapest** design that still meets my service target?". YourSimulation solves this with the **Cross-Entropy (CE) method**, implemented in [`optimize.ts`](https://github.com/dagangilat/yoursimulation/blob/main/packages/engine/src/optimize.ts).
+Running a model answers "what happens if I staff it like *this*?". Optimization answers the more useful question: "what's the **cheapest** design that still meets my service target?". YourSimulation solves this with the **Cross-Entropy (CE) method**, implemented in [`optimize.ts`](https://github.com/dagangilat/yoursimulation-core/blob/main/packages/engine/src/optimize.ts).
 
 ## The problem
 

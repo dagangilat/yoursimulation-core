@@ -1,12 +1,17 @@
 # Example domain models
 
-Five worked models, each a different industry, that **together exercise every one of
-the 12 block types** and every advanced feature. They live in the skill's
-`references/examples/` folder; run any of them with the CLI:
+Six runnable models, each a different industry, that **together exercise every one of
+the 12 block types** and every advanced feature. They live in this repo's
+[`examples/`](https://github.com/dagangilat/yoursimulation-core/tree/main/examples)
+folder — run any of them from a clone with the CLI:
 
 ```bash
-npx tsx packages/engine/src/cli.ts run restaurant.json --pretty
+npx tsx packages/engine/src/cli.ts run examples/restaurant.json --pretty
+# or: airport.json · hospital.json · bank.json · factory-line.json · network.json
 ```
+
+An engine test builds and runs every example and asserts the set covers all 12 node
+types, so these stay valid as the engine evolves.
 
 ## What each model shows
 

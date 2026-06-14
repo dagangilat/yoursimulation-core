@@ -55,7 +55,7 @@ Node (CLI and tests), and in any other JS host. It provides:
 - and the top-level entry points `buildSimulation`, `runExperiment`,
   `recordRun`, and `optimize`.
 
-See the [engine README](https://github.com/dagangilat/yoursimulation/blob/main/packages/engine/README.md)
+See the [engine README](https://github.com/dagangilat/yoursimulation-core/blob/main/packages/engine/README.md)
 for the public API.
 
 ### `apps/web` — the React SPA
@@ -113,8 +113,8 @@ Commands: `validate`, `run`, `optimize`, `record`. See the [tutorial](/tutorial)
 
 `.claude/skills/yoursimulation/` teaches Claude Code to model, run, and optimize
 systems over the engine CLI. See the
-[skill](https://github.com/dagangilat/yoursimulation/blob/main/.claude/skills/yoursimulation/SKILL.md)
-and its [model schema reference](https://github.com/dagangilat/yoursimulation/blob/main/.claude/skills/yoursimulation/references/model-schema.md).
+[skill](https://github.com/dagangilat/yoursimulation-core/blob/main/.claude/skills/yoursimulation/SKILL.md)
+and its [model schema reference](https://github.com/dagangilat/yoursimulation-core/blob/main/.claude/skills/yoursimulation/references/model-schema.md).
 
 ### AI companion
 

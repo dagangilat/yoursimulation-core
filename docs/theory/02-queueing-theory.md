@@ -43,7 +43,7 @@ $$W_q = \frac{\rho}{\mu - \lambda}, \qquad L_q = \lambda W_q$$
 
 $$W_q = \frac{C(c,\, \lambda/\mu)}{c\mu - \lambda}$$
 
-The Erlang-C formula itself is standard; the docs don't re-derive it. (The validation suite computes it directly to check the engine — see [`validation.test.ts`](https://github.com/dagangilat/yoursimulation/blob/main/packages/engine/test/validation.test.ts).)
+The Erlang-C formula itself is standard; the docs don't re-derive it. (The validation suite computes it directly to check the engine — see [`validation.test.ts`](https://github.com/dagangilat/yoursimulation-core/blob/main/packages/engine/test/validation.test.ts).)
 
 ## Beyond M/M/c: abandonment and routing
 
@@ -57,7 +57,7 @@ See the [Blocks reference](/blocks) for how to wire reneging, routing, shared re
 
 ## Validation
 
-These checks live in [`packages/engine/test/validation.test.ts`](https://github.com/dagangilat/yoursimulation/blob/main/packages/engine/test/validation.test.ts) and run on every commit, asserting the engine matches theory within tolerance (utilization to ±0.03, waits to ±10%). The "Engine" column below is the actual simulator output (`mean ± ci95`):
+These checks live in [`packages/engine/test/validation.test.ts`](https://github.com/dagangilat/yoursimulation-core/blob/main/packages/engine/test/validation.test.ts) and run on every commit, asserting the engine matches theory within tolerance (utilization to ±0.03, waits to ±10%). The "Engine" column below is the actual simulator output (`mean ± ci95`):
 
 | System | Metric | Theory | Engine (mean ± CI) |
 |---|---|---|---|

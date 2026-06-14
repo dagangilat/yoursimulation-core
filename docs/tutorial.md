@@ -4,7 +4,7 @@ This walkthrough builds a small but complete model — an airport check-in area 
 from scratch, runs it, reads the KPIs, and then uses the optimizer to find the
 cheapest number of desks that meets a wait target. Every number below is the
 real output of the engine on the model file shipped in this repo
-([`docs/examples/airport-tutorial.json`](https://github.com/dagangilat/yoursimulation/blob/main/docs/examples/airport-tutorial.json)).
+([`docs/examples/airport-tutorial.json`](https://github.com/dagangilat/yoursimulation-core/blob/main/docs/examples/airport-tutorial.json)).
 
 ## 1. The scenario
 

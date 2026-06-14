@@ -23,17 +23,17 @@ The "discrete-event" part is about *how time advances*. The simulator does **not
 
 ## The event calendar
 
-Pending events live in a min-heap **event calendar** ([`calendar.ts`](https://github.com/dagangilat/yoursimulation/blob/main/packages/engine/src/calendar.ts)) ordered by `(time, seq)`. The `time` key drives the clock; the insertion-order `seq` breaks ties deterministically (FIFO among events scheduled for the same instant). The main loop is just: pop the earliest event, advance the clock to its time, run its callback (which may schedule more events), repeat until the horizon is reached.
+Pending events live in a min-heap **event calendar** ([`calendar.ts`](https://github.com/dagangilat/yoursimulation-core/blob/main/packages/engine/src/calendar.ts)) ordered by `(time, seq)`. The `time` key drives the clock; the insertion-order `seq` breaks ties deterministically (FIFO among events scheduled for the same instant). The main loop is just: pop the earliest event, advance the clock to its time, run its callback (which may schedule more events), repeat until the horizon is reached.
 
 ## Seeded RNG streams
 
-Reproducibility comes from a small seeded PRNG (`Random`, Mulberry32) in [`random.ts`](https://github.com/dagangilat/yoursimulation/blob/main/packages/engine/src/random.ts). The same seed always produces the same run.
+Reproducibility comes from a small seeded PRNG (`Random`, Mulberry32) in [`random.ts`](https://github.com/dagangilat/yoursimulation-core/blob/main/packages/engine/src/random.ts). The same seed always produces the same run.
 
 The important refinement is **independent streams**. Rather than drawing every random number from one global generator, each stochastic concern derives its own stream via `streamSeed(root, streamId)`. This means editing one node (say, adding a server) does **not** shift the random draws feeding every *other* node — a property called common random numbers. Scenario comparisons stay fair, and replications stay independent of one another.
 
 ## Warm-up
 
-A simulation started from an empty system is not representative of steady state — early entities see no queue. To remove this **initialization bias**, statistics collected before `settings.warmup` are discarded: the engine runs to `warmup`, calls `resetStats()`, then runs on to `horizon` collecting the numbers that count ([`experiment.ts`](https://github.com/dagangilat/yoursimulation/blob/main/packages/engine/src/experiment.ts)).
+A simulation started from an empty system is not representative of steady state — early entities see no queue. To remove this **initialization bias**, statistics collected before `settings.warmup` are discarded: the engine runs to `warmup`, calls `resetStats()`, then runs on to `horizon` collecting the numbers that count ([`experiment.ts`](https://github.com/dagangilat/yoursimulation-core/blob/main/packages/engine/src/experiment.ts)).
 
 ## Replications and confidence intervals
 
