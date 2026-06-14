@@ -12,7 +12,12 @@ export default defineConfig({
   ignoreDeadLinks: false,
   srcExclude: ['superpowers/**', '**/*.draft.md', '**/plans/**', '**/specs/**', '????-??-??-*.md'],
   markdown: { math: true },
+  head: [
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
+    ['meta', { name: 'theme-color', content: '#4F46E5' }],
+  ],
   themeConfig: {
+    logo: '/favicon.svg',
     nav: [
       { text: 'API & CLI', link: '/api' },
       { text: 'Blocks', link: '/blocks' },
