@@ -1,7 +1,7 @@
 import { Random, streamSeed } from './random.js';
 import { Simulation } from './simulation.js';
-import { RuntimeNode, SinkNode, SourceNode, QueueNode, ResourceNode, BranchNode, DelayNode, SeizeNode, ReleaseNode, AssignNode, ResourcePoolRuntime, type NodeContext } from './nodes.js';
-import type { SimModel, SourceParams, QueueParams, ResourceParams, DelayParams, SeizeParams, ReleaseParams, AssignParams, BranchParams } from './model.js';
+import { RuntimeNode, SinkNode, SourceNode, QueueNode, ResourceNode, BranchNode, DelayNode, SeizeNode, ReleaseNode, AssignNode, BatchNode, SeparateNode, ResourcePoolRuntime, type NodeContext } from './nodes.js';
+import type { SimModel, SourceParams, QueueParams, ResourceParams, DelayParams, SeizeParams, ReleaseParams, AssignParams, BranchParams, BatchParams, SeparateParams } from './model.js';
 
 export interface BuiltSimulation {
   sim: Simulation;
@@ -43,6 +43,16 @@ function validate(model: SimModel): void {
     }
     if (n.type === 'assign' && !(n.params as AssignParams).to)
       throw new Error(`assign ${n.id} needs a target (an attribute name or "priority")`);
+    if (n.type === 'batch') {
+      const size = (n.params as BatchParams).size;
+      if (!(Number.isInteger(size) && size >= 1))
+        throw new Error(`batch ${n.id} size must be an integer >= 1`);
+    }
+    if (n.type === 'separate') {
+      const sp = n.params as SeparateParams;
+      if (sp.mode === 'duplicate' && sp.copies !== undefined && !(Number.isInteger(sp.copies) && sp.copies >= 1))
+        throw new Error(`separate ${n.id} copies must be an integer >= 1`);
+    }
   }
   // Resources must be fed by queues so entities always have somewhere to wait.
   for (const e of model.edges) {
@@ -188,6 +198,10 @@ function makeNode(
       return new BranchNode(id, ctx, params as BranchParams);
     case 'assign':
       return new AssignNode(id, ctx, params as AssignParams);
+    case 'batch':
+      return new BatchNode(id, ctx, params as BatchParams);
+    case 'separate':
+      return new SeparateNode(id, ctx, params as SeparateParams);
     case 'delay':
       return new DelayNode(id, ctx, params as DelayParams);
     case 'seize':

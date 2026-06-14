@@ -9,7 +9,9 @@ export type NodeType =
   | 'delay'
   | 'seize'
   | 'release'
-  | 'assign';
+  | 'assign'
+  | 'batch'
+  | 'separate';
 
 export interface SourceParams {
   interarrival: Distribution;
@@ -66,6 +68,18 @@ export interface BranchParams {
   key?: string; // attribute to match in by-attribute mode
 }
 
+/** Accumulate `size` entities into one. `temporary` keeps members for a later separate. */
+export interface BatchParams {
+  size: number;
+  mode?: 'permanent' | 'temporary'; // default permanent
+}
+
+/** Split a temporary batch back into its members, or duplicate an entity into copies. */
+export interface SeparateParams {
+  mode?: 'split-batch' | 'duplicate'; // default split-batch
+  copies?: number; // for duplicate; default 2
+}
+
 export type SinkParams = Record<string, never>;
 
 export type NodeParams =
@@ -77,6 +91,8 @@ export type NodeParams =
   | ReleaseParams
   | AssignParams
   | BranchParams
+  | BatchParams
+  | SeparateParams
   | SinkParams;
 
 export interface ModelNode {

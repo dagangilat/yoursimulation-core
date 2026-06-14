@@ -4,7 +4,7 @@ import type { Entity } from './entity.js';
 import type { Random } from './random.js';
 import type { Simulation } from './simulation.js';
 import type { EventHandle } from './calendar.js';
-import type { SourceParams, QueueParams, ResourceParams, DelayParams, SeizeParams, ReleaseParams, AssignParams, BranchParams } from './model.js';
+import type { SourceParams, QueueParams, ResourceParams, DelayParams, SeizeParams, ReleaseParams, AssignParams, BranchParams, BatchParams, SeparateParams } from './model.js';
 import type { SimEvent } from './events.js';
 
 /** Services the runtime nodes need; implemented by build.ts. */
@@ -334,6 +334,81 @@ export class AssignNode extends RuntimeNode {
 
   override resetStats(): void {
     this.count = 0;
+  }
+}
+
+/** Accumulate `size` entities, then emit one representative (permanent or temporary). */
+export class BatchNode extends RuntimeNode {
+  batches = 0;
+  private holding: Entity[] = [];
+
+  constructor(id: string, ctx: NodeContext, private readonly p: BatchParams) {
+    super(id, ctx);
+  }
+
+  override receive(e: Entity): void {
+    this.holding.push(e);
+    if (this.holding.length < this.p.size) return;
+    const members = this.holding;
+    this.holding = [];
+    const batch: Entity = {
+      id: this.ctx.nextEntityId(),
+      // Conservative cycle time: the batch is as old as its earliest member.
+      createdAt: Math.min(...members.map((m) => m.createdAt)),
+      priority: members[0]!.priority,
+      enqueuedAt: 0,
+    };
+    if ((this.p.mode ?? 'permanent') === 'temporary') batch.members = members;
+    this.batches++;
+    const dest = this.ctx.out(this.id);
+    this.ctx.emit?.({ kind: 'move', t: this.ctx.sim.clock, entityId: batch.id, from: this.id, to: dest.id });
+    dest.receive(batch);
+  }
+
+  override summary(): Record<string, number> {
+    return { batches: this.batches };
+  }
+
+  override resetStats(): void {
+    this.batches = 0;
+  }
+}
+
+/** Split a temporary batch into its members, or duplicate an entity into copies. */
+export class SeparateNode extends RuntimeNode {
+  emitted = 0;
+
+  constructor(id: string, ctx: NodeContext, private readonly p: SeparateParams) {
+    super(id, ctx);
+  }
+
+  override receive(e: Entity): void {
+    const dest = this.ctx.out(this.id);
+    const forward = (x: Entity): void => {
+      this.emitted++;
+      this.ctx.emit?.({ kind: 'move', t: this.ctx.sim.clock, entityId: x.id, from: this.id, to: dest.id });
+      dest.receive(x);
+    };
+    if ((this.p.mode ?? 'split-batch') === 'duplicate') {
+      const copies = this.p.copies ?? 2;
+      for (let i = 0; i < copies; i++) {
+        forward(i === 0 ? e : { id: this.ctx.nextEntityId(), createdAt: e.createdAt, priority: e.priority, enqueuedAt: 0, attributes: e.attributes ? { ...e.attributes } : undefined });
+      }
+    } else if (e.members) {
+      const members = e.members;
+      e.members = undefined;
+      for (const m of members) forward(m);
+    } else {
+      forward(e); // not a batch — pass through unchanged
+    }
+  }
+
+  override summary(): Record<string, number> {
+    return { emitted: this.emitted };
+  }
+
+  override resetStats(): void {
+    this.emitted = 0;
   }
 }
 

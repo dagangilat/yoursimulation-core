@@ -7,4 +7,6 @@ export interface Entity {
   held?: Map<string, number>;
   /** User attributes (set by assign nodes), used for routing/class logic. */
   attributes?: Record<string, number>;
+  /** Members of a temporary batch, restored by a later separate. */
+  members?: Entity[];
 }

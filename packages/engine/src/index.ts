@@ -21,6 +21,8 @@ export type {
   ResourcePool,
   AssignParams,
   BranchParams,
+  BatchParams,
+  SeparateParams,
   SinkParams,
 } from './model.js';
 export { buildSimulation, type BuiltSimulation } from './build.js';
