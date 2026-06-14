@@ -1,6 +1,6 @@
 import type { Distribution } from './distributions.js';
 
-export type NodeType = 'source' | 'queue' | 'resource' | 'branch' | 'sink';
+export type NodeType = 'source' | 'queue' | 'resource' | 'branch' | 'sink' | 'delay';
 
 export interface SourceParams {
   interarrival: Distribution;
@@ -11,6 +11,8 @@ export interface SourceParams {
 export interface QueueParams {
   discipline?: 'fifo' | 'lifo' | 'priority';
   capacity?: number;
+  /** Abandonment: an entity leaves the queue if not served within a patience time. */
+  reneging?: { patience: Distribution };
 }
 
 export interface ResourceParams {
@@ -18,10 +20,21 @@ export interface ResourceParams {
   service: Distribution;
 }
 
+/** Pure time advance with no capacity contention (infinite-server). */
+export interface DelayParams {
+  delay: Distribution;
+}
+
 export type BranchParams = Record<string, never>; // routing probabilities live on edges
 export type SinkParams = Record<string, never>;
 
-export type NodeParams = SourceParams | QueueParams | ResourceParams | BranchParams | SinkParams;
+export type NodeParams =
+  | SourceParams
+  | QueueParams
+  | ResourceParams
+  | DelayParams
+  | BranchParams
+  | SinkParams;
 
 export interface ModelNode {
   id: string;

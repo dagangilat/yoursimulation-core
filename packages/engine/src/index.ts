@@ -15,6 +15,7 @@ export type {
   SourceParams,
   QueueParams,
   ResourceParams,
+  DelayParams,
   BranchParams,
   SinkParams,
 } from './model.js';

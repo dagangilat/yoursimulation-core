@@ -1,13 +1,14 @@
-import { EventCalendar, type EventCallback } from './calendar.js';
+import { EventCalendar, type EventCallback, type EventHandle } from './calendar.js';
 
 export class Simulation {
   clock = 0;
   private calendar = new EventCalendar();
 
-  /** Schedule `fn` to run `delay` time units after the current clock. */
-  schedule(delay: number, fn: EventCallback): void {
+  /** Schedule `fn` to run `delay` time units after the current clock.
+   *  Returns a handle whose `cancel()` prevents the event from firing. */
+  schedule(delay: number, fn: EventCallback): EventHandle {
     if (delay < 0) throw new Error(`negative delay: ${delay}`);
-    this.calendar.schedule(this.clock + delay, fn);
+    return this.calendar.schedule(this.clock + delay, fn);
   }
 
   /** Execute events in order until the clock reaches `until` (absolute time). */

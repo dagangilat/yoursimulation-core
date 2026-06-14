@@ -3,7 +3,8 @@ import { Tally, TimeWeighted } from './stats.js';
 import type { Entity } from './entity.js';
 import type { Random } from './random.js';
 import type { Simulation } from './simulation.js';
-import type { SourceParams, QueueParams, ResourceParams } from './model.js';
+import type { EventHandle } from './calendar.js';
+import type { SourceParams, QueueParams, ResourceParams, DelayParams } from './model.js';
 import type { SimEvent } from './events.js';
 
 /** Services the runtime nodes need; implemented by build.ts. */
@@ -111,6 +112,8 @@ export class SinkNode extends RuntimeNode {
 export class QueueNode extends RuntimeNode {
   private items: Entity[] = [];
   balked = 0;
+  reneged = 0;
+  private readonly renegeHandles = new Map<number, EventHandle>();
   readonly waitTime = new Tally();
   readonly length: TimeWeighted;
 
@@ -132,7 +135,23 @@ export class QueueNode extends RuntimeNode {
     this.items.push(e);
     this.length.update(this.items.length);
     this.ctx.emit?.({ kind: 'queue', t: this.ctx.sim.clock, nodeId: this.id, length: this.items.length });
+    if (this.p.reneging) this.scheduleRenege(e);
     this.dispatch();
+  }
+
+  /** Abandon the entity if it is still waiting when its patience runs out. */
+  private scheduleRenege(e: Entity): void {
+    const patience = sample(this.p.reneging!.patience, this.ctx.rngFor(`${this.id}:renege`));
+    const handle = this.ctx.sim.schedule(patience, () => {
+      const i = this.items.indexOf(e);
+      if (i === -1) return; // already served — handle should have been cancelled
+      this.items.splice(i, 1);
+      this.renegeHandles.delete(e.id);
+      this.reneged++;
+      this.length.update(this.items.length);
+      this.ctx.emit?.({ kind: 'queue', t: this.ctx.sim.clock, nodeId: this.id, length: this.items.length });
+    });
+    this.renegeHandles.set(e.id, handle);
   }
 
   /** Push waiting entities downstream while it can accept. Resources call this on release. */
@@ -140,6 +159,8 @@ export class QueueNode extends RuntimeNode {
     const down = this.ctx.out(this.id);
     while (this.items.length > 0 && down.canAccept()) {
       const e = this.pop();
+      this.renegeHandles.get(e.id)?.cancel();
+      this.renegeHandles.delete(e.id);
       this.length.update(this.items.length);
       this.waitTime.record(this.ctx.sim.clock - e.enqueuedAt);
       this.ctx.emit?.({ kind: 'queue', t: this.ctx.sim.clock, nodeId: this.id, length: this.items.length });
@@ -161,7 +182,7 @@ export class QueueNode extends RuntimeNode {
   }
 
   override summary(): Record<string, number> {
-    return { avgWait: this.waitTime.mean, avgLength: this.length.mean(), balked: this.balked };
+    return { avgWait: this.waitTime.mean, avgLength: this.length.mean(), balked: this.balked, reneged: this.reneged };
   }
 
   override resetStats(): void {
@@ -169,6 +190,7 @@ export class QueueNode extends RuntimeNode {
     this.length.reset();
     this.length.update(this.items.length);
     this.balked = 0;
+    this.reneged = 0;
   }
 }
 
@@ -235,5 +257,44 @@ export class BranchNode extends RuntimeNode {
 
   override summary(): Record<string, number> {
     return {};
+  }
+}
+
+/** Infinite-server delay: every entity gets its own timer; nothing ever waits. */
+export class DelayNode extends RuntimeNode {
+  count = 0;
+  private inDelay = 0;
+  readonly delayTime = new Tally();
+  readonly wip: TimeWeighted;
+
+  constructor(id: string, ctx: NodeContext, private readonly p: DelayParams) {
+    super(id, ctx);
+    this.wip = new TimeWeighted(ctx.sim);
+  }
+
+  override receive(e: Entity): void {
+    this.inDelay++;
+    this.wip.update(this.inDelay);
+    const d = sample(this.p.delay, this.ctx.rngFor(this.id));
+    this.delayTime.record(d);
+    this.ctx.sim.schedule(d, () => {
+      this.inDelay--;
+      this.wip.update(this.inDelay);
+      this.count++;
+      const dest = this.ctx.out(this.id);
+      this.ctx.emit?.({ kind: 'move', t: this.ctx.sim.clock, entityId: e.id, from: this.id, to: dest.id });
+      dest.receive(e);
+    });
+  }
+
+  override summary(): Record<string, number> {
+    return { count: this.count, avgDelay: this.delayTime.mean, avgWip: this.wip.mean() };
+  }
+
+  override resetStats(): void {
+    this.count = 0;
+    this.delayTime.reset();
+    this.wip.reset();
+    this.wip.update(this.inDelay);
   }
 }

@@ -1,7 +1,7 @@
 import { Random, streamSeed } from './random.js';
 import { Simulation } from './simulation.js';
-import { RuntimeNode, SinkNode, SourceNode, QueueNode, ResourceNode, BranchNode, type NodeContext } from './nodes.js';
-import type { SimModel, SourceParams, QueueParams, ResourceParams } from './model.js';
+import { RuntimeNode, SinkNode, SourceNode, QueueNode, ResourceNode, BranchNode, DelayNode, type NodeContext } from './nodes.js';
+import type { SimModel, SourceParams, QueueParams, ResourceParams, DelayParams } from './model.js';
 
 export interface BuiltSimulation {
   sim: Simulation;
@@ -145,6 +145,8 @@ function makeNode(
       return new ResourceNode(id, ctx, params as ResourceParams);
     case 'branch':
       return new BranchNode(id, ctx);
+    case 'delay':
+      return new DelayNode(id, ctx, params as DelayParams);
     default:
       throw new Error(`unsupported node type: ${type}`);
   }
