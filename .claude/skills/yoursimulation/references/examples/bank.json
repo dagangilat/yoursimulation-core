@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "name": "Bank branch — join-shortest-queue tellers, VIP priority, impatient customers",
   "settings": { "timeUnit": "min", "horizon": 600, "warmup": 60, "replications": 12, "seed": 42 },
-  "presentation": { "theme": "generic" },
+  "presentation": { "theme": "bank" },
   "nodes": [
     { "id": "customers", "type": "source", "label": "Customers", "position": { "x": 0, "y": 160 },
       "params": { "interarrival": { "dist": "exp", "mean": 1.2 } } },

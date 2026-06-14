@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "name": "Restaurant — seat parties together, limited waiting area (balking), dine then leave",
   "settings": { "timeUnit": "min", "horizon": 720, "warmup": 90, "replications": 12, "seed": 21 },
-  "presentation": { "theme": "generic" },
+  "presentation": { "theme": "restaurant" },
   "nodes": [
     { "id": "diners", "type": "source", "label": "Diners", "position": { "x": 0, "y": 140 },
       "params": { "interarrival": { "dist": "exp", "mean": 2 } } },

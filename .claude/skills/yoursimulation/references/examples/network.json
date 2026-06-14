@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "name": "Data network (3 locations)",
   "settings": { "timeUnit": "sec", "horizon": 600, "warmup": 60, "replications": 20, "seed": 42 },
-  "presentation": { "theme": "network" },
+  "presentation": { "theme": "generic" },
   "nodes": [
     { "id": "clients", "type": "source", "label": "Clients", "position": { "x": 0, "y": 120 }, "params": { "interarrival": { "dist": "exp", "mean": 0.05 } } },
     { "id": "edge-buf", "type": "queue", "label": "Edge buffer", "position": { "x": 200, "y": 120 }, "params": { "capacity": 200 } },

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "name": "Factory line — assemble parts, machine with breakdowns + rush-job preemption, palletize",
   "settings": { "timeUnit": "min", "horizon": 1200, "warmup": 120, "replications": 12, "seed": 7 },
-  "presentation": { "theme": "logistics" },
+  "presentation": { "theme": "factory" },
   "nodes": [
     { "id": "bodies", "type": "source", "label": "Bodies", "position": { "x": 0, "y": 80 },
       "params": { "interarrival": { "dist": "exp", "mean": 4 } } },
