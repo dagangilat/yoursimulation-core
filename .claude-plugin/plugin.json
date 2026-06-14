@@ -4,7 +4,7 @@
   "description": "Discrete-event queue simulation + design optimization. Model service/queue/network systems (airport, hospital, data network, logistics, call center, factory), estimate waits/utilization/throughput, and find the cheapest design meeting a service target.",
   "author": {
     "name": "Dagan Gilat",
-    "email": "feedmyinfo@gmail.com"
+    "email": "oss@plantagoai.com"
   },
   "homepage": "https://github.com/dagangilat/yoursimulation",
   "repository": "https://github.com/dagangilat/yoursimulation",

@@ -4,7 +4,7 @@
   "description": "Discrete-event simulation engine + CLI: model service/queue/network systems, estimate waits/utilization/throughput, and optimize designs against a budget and service targets.",
   "type": "module",
   "license": "MIT",
-  "author": "Dagan Gilat <feedmyinfo@gmail.com>",
+  "author": "Dagan Gilat <oss@plantagoai.com>",
   "homepage": "https://github.com/dagangilat/yoursimulation-core",
   "repository": {
     "type": "git",

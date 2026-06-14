@@ -31,6 +31,12 @@ CE is a population-based search that learns *where good solutions live*:
 
 Over iterations the Gaussians concentrate around low-cost, feasible designs. Defaults: `population` 40, `eliteFraction` 0.2, `iterations` 15, `replications` 10, `alpha` 0.7, `stdFloor` 0.5.
 
+## The method's origin: Prof. Reuven Rubinstein
+
+The Cross-Entropy method was created by **Prof. Reuven Y. Rubinstein** (1938–2012) of the Technion — Israel Institute of Technology, one of the most influential figures in Monte Carlo simulation and stochastic optimization. He first introduced CE in 1997 as an adaptive importance-sampling scheme for estimating the probability of **rare events** — situations so unlikely that naïve simulation would almost never observe them. He then made the leap that the same idea, iteratively minimizing the [Kullback–Leibler (cross-entropy) divergence](https://en.wikipedia.org/wiki/Cross-entropy_method) between a parametric sampling distribution and the (unknown) optimal one, could be turned into a general-purpose **optimization** method: treat "find the best design" as "estimate the rare event of sampling a near-optimal design," and let the distribution learn its way there. That is exactly the sample → evaluate → refit loop above.
+
+Rubinstein's broader legacy runs through this whole project: beyond CE, he pioneered the **score-function (likelihood-ratio) method** for sensitivity analysis and gradient estimation in simulation, and authored the field-defining texts *Simulation and the Monte Carlo Method* and *The Cross-Entropy Method: A Unified Approach to Combinatorial Optimization, Monte-Carlo Simulation and Machine Learning* (with Dirk P. Kroese). When YourSimulation searches for the cheapest staffing that still meets your service target, it is standing directly on his work.
+
 ## Fair comparison: common random numbers
 
 Every candidate is simulated with the **same** `settings.seed`. Because the engine derives [independent RNG streams](/theory/01-discrete-event-simulation#seeded-rng-streams) from that seed, two candidates see the *same* arrival pattern and service draws — so a score difference reflects the design change, not luck. This common-random-numbers setup sharply reduces comparison noise.
