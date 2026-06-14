@@ -19,6 +19,7 @@ export type {
   SeizeParams,
   ReleaseParams,
   ResourcePool,
+  AssignParams,
   BranchParams,
   SinkParams,
 } from './model.js';

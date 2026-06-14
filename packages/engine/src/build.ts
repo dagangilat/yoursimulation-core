@@ -1,7 +1,7 @@
 import { Random, streamSeed } from './random.js';
 import { Simulation } from './simulation.js';
-import { RuntimeNode, SinkNode, SourceNode, QueueNode, ResourceNode, BranchNode, DelayNode, SeizeNode, ReleaseNode, ResourcePoolRuntime, type NodeContext } from './nodes.js';
-import type { SimModel, SourceParams, QueueParams, ResourceParams, DelayParams, SeizeParams, ReleaseParams } from './model.js';
+import { RuntimeNode, SinkNode, SourceNode, QueueNode, ResourceNode, BranchNode, DelayNode, SeizeNode, ReleaseNode, AssignNode, ResourcePoolRuntime, type NodeContext } from './nodes.js';
+import type { SimModel, SourceParams, QueueParams, ResourceParams, DelayParams, SeizeParams, ReleaseParams, AssignParams, BranchParams } from './model.js';
 
 export interface BuiltSimulation {
   sim: Simulation;
@@ -29,10 +29,20 @@ function validate(model: SimModel): void {
       throw new Error(`node ${n.id} must have exactly one outgoing edge`);
     if (n.type === 'branch') {
       if (outs.length === 0) throw new Error(`branch ${n.id} needs at least one outgoing edge`);
-      const total = outs.reduce((a, e) => a + (e.probability ?? NaN), 0);
-      if (!(Math.abs(total - 1) < 1e-9))
-        throw new Error(`branch ${n.id} out-edge probabilities must sum to 1`);
+      const mode = (n.params as BranchParams).mode ?? 'probability';
+      if (mode === 'probability') {
+        const total = outs.reduce((a, e) => a + (e.probability ?? NaN), 0);
+        if (!(Math.abs(total - 1) < 1e-9))
+          throw new Error(`branch ${n.id} out-edge probabilities must sum to 1`);
+      } else if (mode === 'by-attribute') {
+        if (!(n.params as BranchParams).key)
+          throw new Error(`by-attribute branch ${n.id} needs a key`);
+        if (outs.filter((e) => e.value === undefined).length > 1)
+          throw new Error(`by-attribute branch ${n.id} may have at most one default (value-less) out-edge`);
+      }
     }
+    if (n.type === 'assign' && !(n.params as AssignParams).to)
+      throw new Error(`assign ${n.id} needs a target (an attribute name or "priority")`);
   }
   // Resources must be fed by queues so entities always have somewhere to wait.
   for (const e of model.edges) {
@@ -112,7 +122,7 @@ export function buildSimulation(
     outs: (id) =>
       model.edges
         .filter((e) => e.from === id)
-        .map((e) => ({ node: nodes.get(e.to)!, probability: e.probability ?? 1 })),
+        .map((e) => ({ node: nodes.get(e.to)!, probability: e.probability ?? 1, value: e.value })),
     upstreamQueues: (id) =>
       model.edges
         .filter((e) => e.to === id)
@@ -175,7 +185,9 @@ function makeNode(
     case 'resource':
       return new ResourceNode(id, ctx, params as ResourceParams);
     case 'branch':
-      return new BranchNode(id, ctx);
+      return new BranchNode(id, ctx, params as BranchParams);
+    case 'assign':
+      return new AssignNode(id, ctx, params as AssignParams);
     case 'delay':
       return new DelayNode(id, ctx, params as DelayParams);
     case 'seize':

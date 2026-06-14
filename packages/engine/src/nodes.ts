@@ -4,7 +4,7 @@ import type { Entity } from './entity.js';
 import type { Random } from './random.js';
 import type { Simulation } from './simulation.js';
 import type { EventHandle } from './calendar.js';
-import type { SourceParams, QueueParams, ResourceParams, DelayParams, SeizeParams, ReleaseParams } from './model.js';
+import type { SourceParams, QueueParams, ResourceParams, DelayParams, SeizeParams, ReleaseParams, AssignParams, BranchParams } from './model.js';
 import type { SimEvent } from './events.js';
 
 /** Services the runtime nodes need; implemented by build.ts. */
@@ -13,8 +13,8 @@ export interface NodeContext {
   nextEntityId(): number;
   /** Single downstream node (non-branch nodes). */
   out(nodeId: string): RuntimeNode;
-  /** All downstream nodes with probabilities (branch nodes). */
-  outs(nodeId: string): { node: RuntimeNode; probability: number }[];
+  /** All downstream nodes with their edge probability/value (branch nodes). */
+  outs(nodeId: string): { node: RuntimeNode; probability: number; value?: number }[];
   /** Queues feeding this node, for pull-on-release. */
   upstreamQueues(nodeId: string): { dispatch(): void }[];
   rngFor(nodeId: string): Random;
@@ -41,6 +41,11 @@ export abstract class RuntimeNode {
   start(): void {}
 
   resetStats(): void {}
+
+  /** Congestion measure for join-shortest-queue routing (lower = preferred). */
+  congestion(): number {
+    return 0;
+  }
 
   abstract summary(): Record<string, number>;
 }
@@ -177,6 +182,11 @@ export class QueueNode extends RuntimeNode {
     }
   }
 
+  override congestion(): number {
+    // Occupancy of the whole station: those waiting here plus those busy downstream.
+    return this.items.length + this.ctx.out(this.id).congestion();
+  }
+
   private pop(): Entity {
     const d = this.p.discipline ?? 'fifo';
     if (d === 'fifo') return this.items.shift()!;
@@ -215,6 +225,10 @@ export class ResourceNode extends RuntimeNode {
     return this.busy < this.p.servers;
   }
 
+  override congestion(): number {
+    return this.busy;
+  }
+
   override receive(e: Entity): void {
     if (!this.canAccept())
       throw new Error(`resource ${this.id} received an entity while full`);
@@ -246,25 +260,80 @@ export class ResourceNode extends RuntimeNode {
 }
 
 export class BranchNode extends RuntimeNode {
+  constructor(id: string, ctx: NodeContext, private readonly p: BranchParams) {
+    super(id, ctx);
+  }
+
   override receive(e: Entity): void {
     const outs = this.ctx.outs(this.id);
-    const u = this.ctx.rngFor(this.id).next();
-    let cum = 0;
-    for (const o of outs) {
-      cum += o.probability;
-      if (u < cum) {
-        this.ctx.emit?.({ kind: 'move', t: this.ctx.sim.clock, entityId: e.id, from: this.id, to: o.node.id });
-        o.node.receive(e);
-        return;
+    const mode = this.p.mode ?? 'probability';
+    let target: RuntimeNode;
+
+    if (mode === 'shortest-queue') {
+      // Join the least-congested downstream node; break ties RANDOMLY so a
+      // symmetric system stays balanced (always picking the first biases it).
+      const cong = outs.map((o) => o.node.congestion());
+      const min = Math.min(...cong);
+      const tied = outs.filter((_, i) => cong[i] === min);
+      target = (tied.length === 1
+        ? tied[0]!
+        : tied[Math.floor(this.ctx.rngFor(this.id).next() * tied.length)]!
+      ).node;
+    } else if (mode === 'by-attribute') {
+      const v = e.attributes?.[this.p.key ?? ''];
+      const match = outs.find((o) => o.value === v) ?? outs.find((o) => o.value === undefined);
+      target = (match ?? outs[outs.length - 1]!).node;
+    } else {
+      // probability
+      const u = this.ctx.rngFor(this.id).next();
+      let cum = 0;
+      let chosen = outs[outs.length - 1]!.node; // float-rounding fallback
+      for (const o of outs) {
+        cum += o.probability;
+        if (u < cum) {
+          chosen = o.node;
+          break;
+        }
       }
+      target = chosen;
     }
-    const fb = outs[outs.length - 1]!.node;
-    this.ctx.emit?.({ kind: 'move', t: this.ctx.sim.clock, entityId: e.id, from: this.id, to: fb.id });
-    fb.receive(e); // float-rounding fallback
+
+    this.ctx.emit?.({ kind: 'move', t: this.ctx.sim.clock, entityId: e.id, from: this.id, to: target.id });
+    target.receive(e);
   }
 
   override summary(): Record<string, number> {
     return {};
+  }
+}
+
+/** Set an attribute (or the entity's priority) to a sampled value, then forward. */
+export class AssignNode extends RuntimeNode {
+  count = 0;
+
+  constructor(id: string, ctx: NodeContext, private readonly p: AssignParams) {
+    super(id, ctx);
+  }
+
+  override receive(e: Entity): void {
+    const v = sample(this.p.value, this.ctx.rngFor(this.id));
+    if (this.p.to === 'priority') {
+      e.priority = v;
+    } else {
+      (e.attributes ?? (e.attributes = {}))[this.p.to] = v;
+    }
+    this.count++;
+    const dest = this.ctx.out(this.id);
+    this.ctx.emit?.({ kind: 'move', t: this.ctx.sim.clock, entityId: e.id, from: this.id, to: dest.id });
+    dest.receive(e);
+  }
+
+  override summary(): Record<string, number> {
+    return { assigned: this.count };
+  }
+
+  override resetStats(): void {
+    this.count = 0;
   }
 }
 

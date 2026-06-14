@@ -8,7 +8,8 @@ export type NodeType =
   | 'sink'
   | 'delay'
   | 'seize'
-  | 'release';
+  | 'release'
+  | 'assign';
 
 export interface SourceParams {
   interarrival: Distribution;
@@ -46,7 +47,25 @@ export interface ReleaseParams {
   units?: number;
 }
 
-export type BranchParams = Record<string, never>; // routing probabilities live on edges
+/** Set an entity attribute (or its priority) to a sampled value. `to` is an
+ *  attribute name, or the reserved word `priority`. */
+export interface AssignParams {
+  to: string;
+  value: Distribution;
+}
+
+/**
+ * Routing modes:
+ * - `probability` (default): use each out-edge's `probability` (must sum to 1).
+ * - `shortest-queue`: send to the least-congested downstream node (join-shortest-queue).
+ * - `by-attribute`: send to the out-edge whose `value` equals `entity.attributes[key]`;
+ *   an out-edge with no `value` is the default/else route.
+ */
+export interface BranchParams {
+  mode?: 'probability' | 'shortest-queue' | 'by-attribute';
+  key?: string; // attribute to match in by-attribute mode
+}
+
 export type SinkParams = Record<string, never>;
 
 export type NodeParams =
@@ -56,6 +75,7 @@ export type NodeParams =
   | DelayParams
   | SeizeParams
   | ReleaseParams
+  | AssignParams
   | BranchParams
   | SinkParams;
 
@@ -70,8 +90,10 @@ export interface ModelEdge {
   id: string;
   from: string;
   to: string;
-  /** Required on branch out-edges; ignored elsewhere. */
+  /** Required on probability-mode branch out-edges; ignored elsewhere. */
   probability?: number;
+  /** by-attribute branch routing: the attribute value that selects this edge. */
+  value?: number;
 }
 
 /** A named pool of interchangeable capacity, seized/released across steps. */

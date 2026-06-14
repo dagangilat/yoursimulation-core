@@ -5,4 +5,6 @@ export interface Entity {
   enqueuedAt: number;
   /** Pool id → units currently held (allocated lazily by seize). */
   held?: Map<string, number>;
+  /** User attributes (set by assign nodes), used for routing/class logic. */
+  attributes?: Record<string, number>;
 }
