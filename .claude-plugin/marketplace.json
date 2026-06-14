@@ -1,0 +1,25 @@
+{
+  "name": "yoursimulation",
+  "owner": {
+    "name": "Dagan Gilat",
+    "email": "feedmyinfo@gmail.com"
+  },
+  "metadata": {
+    "description": "Marketplace for the YourSimulation discrete-event simulation + optimization plugin.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "yoursimulation",
+      "source": "./",
+      "description": "Discrete-event queue simulator with design optimization. Model queue/network systems and find the cheapest design that meets a service target.",
+      "version": "0.1.0",
+      "keywords": [
+        "discrete-event-simulation",
+        "queueing",
+        "optimization",
+        "operations-research"
+      ]
+    }
+  ]
+}

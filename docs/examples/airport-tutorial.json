@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "name": "Airport check-in",
+  "settings": { "timeUnit": "min", "horizon": 480, "warmup": 60, "replications": 30, "seed": 42 },
+  "presentation": { "theme": "airport" },
+  "nodes": [
+    { "id": "arrivals", "type": "source", "label": "Passengers", "position": { "x": 0, "y": 120 }, "params": { "interarrival": { "dist": "exp", "mean": 2 } } },
+    { "id": "checkin-q", "type": "queue", "label": "Check-in queue", "position": { "x": 220, "y": 120 }, "params": { "discipline": "fifo" } },
+    { "id": "desks", "type": "resource", "label": "Desks", "position": { "x": 440, "y": 120 }, "params": { "servers": 4, "service": { "dist": "triangular", "min": 1, "mode": 3, "max": 6 } } },
+    { "id": "exit", "type": "sink", "label": "Boarding", "position": { "x": 660, "y": 120 }, "params": {} }
+  ],
+  "edges": [
+    { "id": "e1", "from": "arrivals", "to": "checkin-q" },
+    { "id": "e2", "from": "checkin-q", "to": "desks" },
+    { "id": "e3", "from": "desks", "to": "exit" }
+  ]
+}

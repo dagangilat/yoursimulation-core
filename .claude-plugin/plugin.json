@@ -1,0 +1,22 @@
+{
+  "name": "yoursimulation",
+  "version": "0.1.0",
+  "description": "Discrete-event queue simulation + design optimization. Model service/queue/network systems (airport, hospital, data network, logistics, call center, factory), estimate waits/utilization/throughput, and find the cheapest design meeting a service target.",
+  "author": {
+    "name": "Dagan Gilat",
+    "email": "feedmyinfo@gmail.com"
+  },
+  "homepage": "https://github.com/dagangilat/yoursimulation",
+  "repository": "https://github.com/dagangilat/yoursimulation",
+  "license": "MIT",
+  "keywords": [
+    "discrete-event-simulation",
+    "des",
+    "queueing",
+    "queueing-network",
+    "optimization",
+    "operations-research",
+    "simulation",
+    "capacity-planning"
+  ]
+}

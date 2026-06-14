@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "name": "M/M/1 (rho=0.8)",
+  "settings": { "timeUnit": "min", "horizon": 20000, "warmup": 2000, "replications": 20, "seed": 42 },
+  "nodes": [
+    { "id": "src", "type": "source", "label": "Arrivals", "position": { "x": 0, "y": 0 }, "params": { "interarrival": { "dist": "exp", "mean": 10 } } },
+    { "id": "q", "type": "queue", "label": "Queue", "position": { "x": 150, "y": 0 }, "params": { "discipline": "fifo" } },
+    { "id": "svc", "type": "resource", "label": "Server", "position": { "x": 300, "y": 0 }, "params": { "servers": 1, "service": { "dist": "exp", "mean": 8 } } },
+    { "id": "out", "type": "sink", "label": "Done", "position": { "x": 450, "y": 0 }, "params": {} }
+  ],
+  "edges": [
+    { "id": "e1", "from": "src", "to": "q" },
+    { "id": "e2", "from": "q", "to": "svc" },
+    { "id": "e3", "from": "svc", "to": "out" }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "name": "Data network (3 locations)",
+  "settings": { "timeUnit": "sec", "horizon": 600, "warmup": 60, "replications": 20, "seed": 42 },
+  "presentation": { "theme": "network" },
+  "nodes": [
+    { "id": "clients", "type": "source", "label": "Clients", "position": { "x": 0, "y": 120 }, "params": { "interarrival": { "dist": "exp", "mean": 0.05 } } },
+    { "id": "edge-buf", "type": "queue", "label": "Edge buffer", "position": { "x": 200, "y": 120 }, "params": { "capacity": 200 } },
+    { "id": "router", "type": "resource", "label": "Core router", "position": { "x": 400, "y": 120 }, "params": { "servers": 8, "service": { "dist": "exp", "mean": 0.3 } } },
+    { "id": "served", "type": "sink", "label": "Served", "position": { "x": 600, "y": 120 }, "params": {} }
+  ],
+  "edges": [
+    { "id": "e1", "from": "clients", "to": "edge-buf" },
+    { "id": "e2", "from": "edge-buf", "to": "router" },
+    { "id": "e3", "from": "router", "to": "served" }
+  ]
+}
