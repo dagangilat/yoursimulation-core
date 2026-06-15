@@ -23,9 +23,9 @@ attached. Built for the public, education, researchers, and consultants.
 
 ```bash
 npm install
-npx tsx packages/engine/src/cli.ts validate model.json
-npx tsx packages/engine/src/cli.ts run model.json --pretty
-npx tsx packages/engine/src/cli.ts optimize model.json problem.json --pretty
+npx @plantagoai/yoursim-engine validate model.json
+npx @plantagoai/yoursim-engine run model.json --pretty
+npx @plantagoai/yoursim-engine optimize model.json problem.json --pretty
 ```
 
 ## Install as a Claude Code plugin

@@ -5,3 +5,4 @@ docs/.vitepress/cache/
 *.log
 dist/
 packages/*/dist/
+examples-report.html

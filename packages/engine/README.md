@@ -151,7 +151,7 @@ console.log(result.nodes['out'].avgTimeInSystem.mean); // mean time in system
 The package also ships a JSON-in/JSON-out CLI:
 
 ```bash
-npx tsx packages/engine/src/cli.ts run docs/examples/mm1.json --pretty
+npx @plantagoai/yoursim-engine run docs/examples/mm1.json --pretty
 ```
 
 Commands: `validate`, `run`, `optimize <problem.json>`, `record`. Settings come

@@ -43,6 +43,7 @@
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
+    "examples:report": "tsx scripts/examples-report.ts",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
