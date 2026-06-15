@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyVariables, scoreAndFeasible, optimize, type SimModel, type OptProblem } from '../src/index.js';
+import { applyVariables, scoreAndFeasible, optimize, type SimModel, type OptProblem, type OptProgress } from '../src/index.js';
 
 const model: SimModel = {
   schemaVersion: 1,
@@ -52,5 +52,18 @@ describe('optimize', () => {
     expect(a.best.values['r.servers']).toBeLessThanOrEqual(7);
     expect(a.trajectory.length).toBeGreaterThan(0);
     expect(a.evaluations.length).toBeGreaterThan(0);
+  });
+
+  it('streams per-iteration progress with elite mean and per-variable distribution', () => {
+    const seen: OptProgress[] = [];
+    optimize(model, problem, settings, { population: 24, iterations: 4 }, 1, (p) => seen.push(p));
+    expect(seen.length).toBeGreaterThan(0);
+    const first = seen[0]!;
+    expect(first.total).toBe(4);
+    expect(typeof first.eliteMeanScore).toBe('number');
+    expect(first.dist).toHaveLength(problem.variables.length);
+    expect(first.dist[0]!.key).toBe('r.servers');
+    expect(first.dist[0]!.std).toBeGreaterThan(0);
+    expect(first.best).toBeDefined();
   });
 });

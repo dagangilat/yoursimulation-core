@@ -6,8 +6,8 @@
     "name": "Dagan Gilat",
     "email": "oss@plantagoai.com"
   },
-  "homepage": "https://github.com/dagangilat/yoursimulation",
-  "repository": "https://github.com/dagangilat/yoursimulation",
+  "homepage": "https://github.com/dagangilat/yoursimulation-core",
+  "repository": "https://github.com/dagangilat/yoursimulation-core",
   "license": "MIT",
   "keywords": [
     "discrete-event-simulation",

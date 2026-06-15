@@ -26,6 +26,8 @@ export type {
   MatchParams,
   SinkParams,
 } from './model.js';
+export { expandGroups, type ExpandOptions } from './groups.js';
+export type { SimGroup } from './model.js';
 export { buildSimulation, type BuiltSimulation } from './build.js';
 export {
   RuntimeNode,
@@ -51,5 +53,5 @@ export type { Histogram } from './detail.js';
 export {
   optimize, applyVariables, scoreAndFeasible, costOf, metricValue, needsDetailed,
   type OptVariable, type OptConstraint, type OptProblem, type OptOptions,
-  type Candidate, type OptimizationResult,
+  type Candidate, type OptimizationResult, type OptProgress,
 } from './optimize.js';

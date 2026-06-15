@@ -13,6 +13,14 @@ export interface OptimizationResult {
   evaluations: Candidate[];
 }
 
+export interface OptProgress {
+  iter: number;
+  total: number;
+  best: Candidate;
+  eliteMeanScore: number;
+  dist: { key: string; mean: number; std: number; min: number; max: number }[];
+}
+
 const keyOf = (v: OptVariable): string => `${v.nodeId}.${v.param}`;
 
 /** Deep-clones the model and writes each `${nodeId}.${param}` value onto the node's params. */
@@ -70,7 +78,7 @@ export function optimize(
   settings: RunSettings,
   options: OptOptions = {},
   ceSeed = 42,
-  onProgress?: (iter: number, total: number, best: Candidate) => void,
+  onProgress?: (p: OptProgress) => void,
 ): OptimizationResult {
   const N = options.population ?? 40;
   const rho = options.eliteFraction ?? 0.2;
@@ -113,11 +121,8 @@ export function optimize(
     cands.sort((a, b) => a.score - b.score);
     const eliteN = Math.max(1, Math.ceil(rho * N));
     const elite = cands.slice(0, eliteN);
-    trajectory.push({
-      iter: it,
-      bestScore: best!.score,
-      eliteMeanScore: elite.reduce((s, c) => s + c.score, 0) / elite.length,
-    });
+    const eliteMeanScore = elite.reduce((s, c) => s + c.score, 0) / elite.length;
+    trajectory.push({ iter: it, bestScore: best!.score, eliteMeanScore });
     vars.forEach((v, i) => {
       const xs = elite.map((c) => c.values[keyOf(v)]!);
       const em = xs.reduce((s, x) => s + x, 0) / xs.length;
@@ -125,7 +130,8 @@ export function optimize(
       mean[i] = alpha * em + (1 - alpha) * mean[i]!;
       std[i] = Math.max(stdFloor, alpha * ev + (1 - alpha) * std[i]!);
     });
-    onProgress?.(it + 1, iters, best!);
+    const dist = vars.map((v, i) => ({ key: keyOf(v), mean: mean[i]!, std: std[i]!, min: v.min, max: v.max }));
+    onProgress?.({ iter: it + 1, total: iters, best: best!, eliteMeanScore, dist });
     if (std.every((s) => s <= stdFloor)) break; // converged
   }
   return { best: best!, trajectory, evaluations };

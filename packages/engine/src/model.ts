@@ -135,9 +135,19 @@ export interface ResourcePool {
   capacity: number;
 }
 
+export interface SimGroup {
+  id: string;
+  members: string[];
+  entry: string;
+  exit: string;
+  count: number;
+  parent?: string;
+}
+
 export interface SimModel {
   schemaVersion: 1;
   nodes: ModelNode[];
   edges: ModelEdge[];
   resources?: ResourcePool[];
+  groups?: SimGroup[];
 }
