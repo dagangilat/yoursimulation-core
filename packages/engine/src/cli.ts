@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { readFile as fsReadFile } from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { buildSimulation } from './build.js';
 import { runExperiment, optimize, recordRun } from './index.js';
@@ -95,8 +96,19 @@ export async function runCommand(
   }
 }
 
-// Run when executed directly (e.g. `npx tsx packages/engine/src/cli.ts run model.json`).
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+// Run when executed directly OR via the package's bin symlink (npm/npx).
+// argv[1] may be a symlink (e.g. node_modules/.bin/yoursim → dist/cli.js); resolve it
+// before comparing to import.meta.url, or `main` never runs when invoked as the bin.
+function isDirectEntry(): boolean {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  try {
+    return import.meta.url === pathToFileURL(realpathSync(entry)).href;
+  } catch {
+    return import.meta.url === pathToFileURL(entry).href;
+  }
+}
+if (isDirectEntry()) {
   void runCommand(process.argv.slice(2)).then(({ stdout, stderr, exitCode }) => {
     if (stdout) process.stdout.write(stdout + '\n');
     if (stderr) process.stderr.write(stderr + '\n');

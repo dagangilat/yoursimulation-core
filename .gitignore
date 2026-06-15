@@ -6,3 +6,5 @@ docs/.vitepress/cache/
 dist/
 packages/*/dist/
 examples-report.html
+yoursim-examples-report.html
+.firebase/
