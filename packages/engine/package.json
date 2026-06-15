@@ -32,6 +32,9 @@
     "dist",
     "README.md"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run",
