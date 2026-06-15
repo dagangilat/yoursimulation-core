@@ -121,6 +121,28 @@ routine paths that both **seize** from a shared `beds` pool (urgent at higher pr
 npx tsx packages/engine/src/cli.ts run clinic-pool.json --pretty
 ```
 
+## Groups & scale
+
+Real systems repeat: 30 identical branch offices, hundreds of edge sites, a fleet of
+machines. Rather than draw each one, wrap a representative sub-network in a **group** and
+give it a replication **count**. A group has a single **entry** and **exit** (where edges
+from the rest of the model connect), a list of **members**, and a `count`. In the editor it
+**collapses** to one tidy node with a `×count` badge; double-click to expand.
+
+When you run the model, the engine expands groups first (`expandGroups`), choosing a strategy
+by size:
+
+- **Flatten** (default, while under a node budget): the group is cloned `count` times. Incoming
+  traffic is split across the copies (shortest-queue, or an even split when the entry isn't a
+  queue) and their exits merge back. You get exact per-copy queueing.
+- **Aggregate** (very large counts): a single copy stands in, with server counts, capacities,
+  and source rates scaled by `count` — much faster, an approximation.
+
+This is how the **corporate-network** template models 100k clients across 30 branches: client
+populations are rate-based `source` blocks (one source whose rate represents the whole
+population, not a node per client), and the branch sub-network is a `×30` group. See the model
+schema's *Groups* section for the exact fields.
+
 ## See also
 
 - [Tutorial: model an airport](/tutorial) — build your first model step by step

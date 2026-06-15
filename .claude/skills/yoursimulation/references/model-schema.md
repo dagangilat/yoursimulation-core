@@ -14,6 +14,7 @@ at build time). A model is a single JSON object.
   "settings": { "...": "..." },
   "presentation": { "theme": "generic" },
   "resources": [ { "id": "nurses", "capacity": 3 } ],
+  "groups": [ { "id": "branch", "members": ["sw","rtr"], "entry": "sw", "exit": "rtr", "count": 30 } ],
   "nodes": [ ... ],
   "edges": [ ... ]
 }
@@ -25,6 +26,7 @@ at build time). A model is a single JSON object.
 | `nodes` | yes | Array of nodes (see below). |
 | `edges` | yes | Array of edges (see below). |
 | `resources` | optional | Array of **resource pools** `{ id, capacity }` — shared capacity seized/released across steps (see Resource pools). |
+| `groups` | optional | Array of **node groups** that replicate (`count`) and/or collapse — expanded before simulation (see Groups). |
 | `name` | app-level | Non-empty string. The engine ignores it; the web app requires it. |
 | `settings` | app-level | Run settings (see below). The CLI reads these, or you pass `--horizon/--warmup/--replications/--seed`. |
 | `presentation` | app-level | `{ "theme": string }`. Cosmetic only; the engine ignores it. |
@@ -189,6 +191,41 @@ or a forklift seized to move a load and released after.
 Pattern: `seize(pool) → delay(activity) → … → release(pool)`. The plain `resource`
 is exactly sugar for `seize → delay(service) → release` of a capacity-`servers` pool.
 Pool stats appear in results keyed by the pool id (`utilization`, `avgQueue`).
+
+## Groups (collapse & replication)
+
+Optional top-level `groups: [...]` wraps a set of nodes into a sub-network that can be
+**replicated** (`count`) and **collapsed** in the editor. Use it to model scale without
+authoring thousands of literal nodes — e.g. one "Branch" sub-network with `count: 30`.
+
+```json
+{ "id": "branch", "label": "Branch", "members": ["sw", "buf", "rtr"],
+  "entry": "sw", "exit": "rtr", "count": 30, "collapsed": true,
+  "position": { "x": 0, "y": 0 } }
+```
+
+| Field | Required | Notes |
+| --- | --- | --- |
+| `id` | yes | Unique group id. |
+| `members` | yes | Node ids in the group (non-empty). |
+| `entry` | yes | The member that external **incoming** edges connect to. |
+| `exit` | yes | The member that external **outgoing** edges leave from. |
+| `count` | optional | Replication factor, integer `>= 1` (default 1). |
+| `collapsed` | optional | Editor display only (default false). |
+| `parent` | optional | Parent group id (nesting; v1 nesting is approximate). |
+| `position` | app-level | Collapsed-node placement on the canvas. |
+
+Rules: `entry`/`exit` must be members; every edge crossing the group boundary must touch
+`entry` (incoming) or `exit` (outgoing); one entry and one exit per group (v1).
+
+**Replication semantics (`expandGroups`, hybrid).** The engine rewrites the graph before
+building. While the flattened node total stays under a budget (`maxFlattenNodes`, default
+1500) a `count: N` group is **flattened** — cloned N times, with a shortest-queue split
+inserted on the incoming edge (an equal-probability split when the entry is not a queue)
+and the N copies' exits merged. Beyond the budget it is **aggregated** — a single copy
+with `servers`/`capacity`/source-rate scaled by N (faster, approximate). Model large client
+populations as **rate-based sources** (one `source` whose rate represents the whole
+population), not literal per-client nodes.
 
 ## Distributions (8)
 

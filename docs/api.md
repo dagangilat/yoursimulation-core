@@ -55,6 +55,15 @@ constraints, evaluating each candidate by simulation with common random numbers.
 Produces a deterministic **event trace** (arrival / move / depart / server / queue
 events) — the stream the app's watch-mode animation plays back.
 
+### `expandGroups(model, options?) → SimModel`
+Expands replicated/collapsed node **groups** into a flat graph, to call before
+`buildSimulation`/`runExperiment`/`optimize`/`recordRun`. A `count: N` group is
+**flattened** (cloned N× with a shortest-queue split and merged exits) while the node
+total stays under `options.maxFlattenNodes` (default 1500), otherwise **aggregated**
+(one copy with server counts / capacities / source rates scaled by N). Pure and
+deterministic, and a no-op for models without `groups`. See the model schema's
+*Groups* section.
+
 ## CLI
 
 From a clone of this repo:
