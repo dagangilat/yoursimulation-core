@@ -103,5 +103,44 @@ pure delay. *(at a busy load, tables ~100% utilized and ~36 parties/run turned a
 
 ---
 
+## Also in the editor — teaching & at-scale models
+
+A few more starting points (each is a one-click template in the Studio **New** menu):
+
+### Blank
+An empty canvas — start from nothing.
+
+### M/M/1 — the canonical single-server queue
+`source (λ) → queue → server (1 · μ) → sink`
+
+One arrival stream, one line, one server. The textbook queue: at load ρ = λ/μ the mean
+wait is `Wq = ρ / (μ − λ)`. The best first model for intuition — compare its simulated
+KPIs to the closed form on the [queueing-theory page](/theory/02-queueing-theory).
+
+### M/M/c — c parallel servers
+`source (λ) → queue → servers (c · μ) → sink`
+
+The same arrivals served by **c identical servers** sharing one queue (Erlang-C, c = 3 by
+default). Raise `c` and watch utilization and wait trade off — exactly what the
+[optimizer](/theory/04-cross-entropy) tunes for the cheapest feasible design.
+
+### Hospital ER
+`patients → triage → care stations → discharge`
+
+An emergency department with triage and limited care capacity — priorities and waiting
+under load. (The pooled-bed **Clinic** model above is a fuller seize/release variant.)
+
+### Corporate network — modelling at scale
+`device populations → classify traffic → Branch ×30 (LAN switch → router) → WAN link
+→ core → data center (web / app / database) → Internet`
+
+A global corporate network: 100k clients as **rate-based population sources**, the branch
+modelled once as a **group replicated ×30**, a WAN link (latency + jitter), and a data
+center. It shows how [groups](/blocks#groups-scale) keep a huge topology tractable —
+they **expand** (flatten or aggregate) at run time. Best explored in Studio, where the
+group expands when you run it.
+
+---
+
 See the [Blocks reference](/blocks) for every parameter, and the
 [tutorial](/tutorial) to build your own from scratch.

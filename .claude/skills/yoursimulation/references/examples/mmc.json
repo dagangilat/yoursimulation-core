@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "name": "M/M/c queue",
+  "settings": { "timeUnit": "min", "horizon": 600, "warmup": 60, "replications": 20, "seed": 42 },
+  "nodes": [
+    { "id": "arrivals", "type": "source", "label": "Arrivals (lambda~3)", "params": { "interarrival": { "dist": "exp", "mean": 0.3333 } } },
+    { "id": "queue", "type": "queue", "label": "Queue", "params": {} },
+    { "id": "servers", "type": "resource", "label": "Servers x3 (mu=1.25)", "params": { "servers": 3, "service": { "dist": "exp", "mean": 0.8 } } },
+    { "id": "done", "type": "sink", "label": "Departed", "params": {} }
+  ],
+  "edges": [
+    { "id": "e1", "from": "arrivals", "to": "queue" },
+    { "id": "e2", "from": "queue", "to": "servers" },
+    { "id": "e3", "from": "servers", "to": "done" }
+  ]
+}

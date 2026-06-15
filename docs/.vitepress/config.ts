@@ -19,6 +19,7 @@ export default defineConfig({
   themeConfig: {
     logo: '/favicon.svg',
     nav: [
+      { text: 'Intro Kit', link: '/kit' },
       { text: 'API & CLI', link: '/api' },
       { text: 'Blocks', link: '/blocks' },
       { text: 'Examples', link: '/examples' },
@@ -31,6 +32,9 @@ export default defineConfig({
         text: 'Engine',
         items: [
           { text: 'Overview', link: '/' },
+          { text: 'Intro Kit', link: '/kit' },
+          { text: 'One-pager', link: '/one-pager' },
+          { text: 'Whitepaper', link: '/whitepaper' },
           { text: 'API & CLI', link: '/api' },
           { text: 'Blocks reference', link: '/blocks' },
           { text: 'Example domain models', link: '/examples' },
