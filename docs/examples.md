@@ -6,7 +6,7 @@ the 12 block types** and every advanced feature. They live in this repo's
 folder — run any of them from a clone with the CLI:
 
 ```bash
-npx tsx packages/engine/src/cli.ts run examples/restaurant.json --pretty
+npx @plantagoai/yoursim-engine run examples/restaurant.json --pretty
 # or: airport.json · hospital.json · bank.json · factory-line.json · network.json
 ```
 

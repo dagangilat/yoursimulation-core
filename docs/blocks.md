@@ -118,7 +118,7 @@ routine paths that both **seize** from a shared `beds` pool (urgent at higher pr
 **delay** for treatment, and **release**. Run it with the CLI:
 
 ```bash
-npx tsx packages/engine/src/cli.ts run clinic-pool.json --pretty
+npx @plantagoai/yoursim-engine run clinic-pool.json --pretty
 ```
 
 ## Groups & scale

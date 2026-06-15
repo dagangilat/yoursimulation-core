@@ -101,10 +101,10 @@ holds only **public client keys**, which is expected for a Firebase web app.
 
 ### CLI
 
-`packages/engine/src/cli.ts`, run via `npx tsx`. JSON in, JSON out:
+the `@plantagoai/yoursim-engine` CLI (`npx @plantagoai/yoursim-engine`). JSON in, JSON out:
 
 ```bash
-npx tsx packages/engine/src/cli.ts run docs/examples/mm1.json --pretty
+npx @plantagoai/yoursim-engine run docs/examples/mm1.json --pretty
 ```
 
 Commands: `validate`, `run`, `optimize`, `record`. See the [tutorial](/tutorial).

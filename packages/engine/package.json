@@ -1,6 +1,6 @@
 {
   "name": "@plantagoai/yoursim-engine",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Discrete-event simulation engine + CLI: model service/queue/network systems, estimate waits/utilization/throughput, and optimize designs against a budget and service targets.",
   "type": "module",
   "license": "MIT",
@@ -22,6 +22,9 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "yoursim": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

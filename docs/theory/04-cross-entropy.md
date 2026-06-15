@@ -61,7 +61,7 @@ A `problem.json` declaring the knobs and targets — here, tune the number of de
 ```
 
 ```bash
-npx tsx packages/engine/src/cli.ts optimize docs/examples/airport-tutorial.json problem.json --pretty
+npx @plantagoai/yoursim-engine optimize docs/examples/airport-tutorial.json problem.json --pretty
 # reports the cheapest server count whose avgWait stays under the target
 ```
 

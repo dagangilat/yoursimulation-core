@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { readFile as fsReadFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { buildSimulation } from './build.js';

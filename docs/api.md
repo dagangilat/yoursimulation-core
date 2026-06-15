@@ -70,16 +70,16 @@ From a clone of this repo:
 
 ```bash
 # validate the model graph (exit 1 + {ok:false, issues:[…]} on failure)
-npx tsx packages/engine/src/cli.ts validate examples/bank.json
+npx @plantagoai/yoursim-engine validate examples/bank.json
 
 # run → KPIs JSON (add --pretty)
-npx tsx packages/engine/src/cli.ts run examples/bank.json --pretty
+npx @plantagoai/yoursim-engine run examples/bank.json --pretty
 
 # optimize parameters against a problem.json
-npx tsx packages/engine/src/cli.ts optimize examples/airport.json problem.json --pretty
+npx @plantagoai/yoursim-engine optimize examples/airport.json problem.json --pretty
 
 # record an event trace of one run
-npx tsx packages/engine/src/cli.ts record examples/restaurant.json
+npx @plantagoai/yoursim-engine record examples/restaurant.json
 ```
 
 A model path may be `-` to read from stdin (pipe a generator's output straight in).

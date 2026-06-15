@@ -120,16 +120,16 @@ same commands run in both contexts. The model arg is a path, or `-` to read stdi
 
 ```bash
 # Validate the model graph (exits non-zero, prints {ok:false, issues:[...]} on failure)
-npx tsx "${CLAUDE_PLUGIN_ROOT:-.}/packages/engine/src/cli.ts" validate model.json
+npx @plantagoai/yoursim-engine validate model.json
 
 # Run the experiment -> KPIs JSON (add --pretty to read it)
-npx tsx "${CLAUDE_PLUGIN_ROOT:-.}/packages/engine/src/cli.ts" run model.json --pretty
+npx @plantagoai/yoursim-engine run model.json --pretty
 
 # Optimize parameters against a problem definition
-npx tsx "${CLAUDE_PLUGIN_ROOT:-.}/packages/engine/src/cli.ts" optimize model.json problem.json --pretty
+npx @plantagoai/yoursim-engine optimize model.json problem.json --pretty
 
 # Record an event trace of a single run
-npx tsx "${CLAUDE_PLUGIN_ROOT:-.}/packages/engine/src/cli.ts" record model.json
+npx @plantagoai/yoursim-engine record model.json
 ```
 
 Settings come from `model.settings`, or override with flags:
@@ -145,7 +145,7 @@ Read a generated model from stdin with `-`:
 
 ```bash
 npx tsx "${CLAUDE_PLUGIN_ROOT:-.}/.claude/skills/yoursimulation/references/examples/generate-network.ts" 100 \
-  | npx tsx "${CLAUDE_PLUGIN_ROOT:-.}/packages/engine/src/cli.ts" run -
+  | npx @plantagoai/yoursim-engine run -
 ```
 
 ## Workflow

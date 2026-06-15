@@ -54,7 +54,7 @@ to wait) — that is why the desks sit behind the check-in line.
 ## 3. Validate it
 
 ```bash
-npx tsx packages/engine/src/cli.ts validate docs/examples/airport-tutorial.json
+npx @plantagoai/yoursim-engine validate docs/examples/airport-tutorial.json
 ```
 
 ```json
@@ -68,7 +68,7 @@ probabilities sum to 1, and that resources are fed by queues.
 ## 4. Run it and read the KPIs
 
 ```bash
-npx tsx packages/engine/src/cli.ts run docs/examples/airport-tutorial.json --pretty
+npx @plantagoai/yoursim-engine run docs/examples/airport-tutorial.json --pretty
 ```
 
 The relevant KPIs (mean across 30 replications, with the 95% CI half-width):
@@ -131,7 +131,7 @@ on the check-in queue's `avgWait`; violating it adds a heavy penalty so the
 search avoids infeasible designs.
 
 ```bash
-npx tsx packages/engine/src/cli.ts optimize docs/examples/airport-tutorial.json problem.json --pretty
+npx @plantagoai/yoursim-engine optimize docs/examples/airport-tutorial.json problem.json --pretty
 ```
 
 The Cross-Entropy search ([theory](/theory/04-cross-entropy)) returns:

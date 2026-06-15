@@ -71,7 +71,7 @@ The M/M/1 figures come from `docs/examples/mm1.json`; the M/M/3 figure from an e
 ## Try it
 
 ```bash
-npx tsx packages/engine/src/cli.ts run docs/examples/mm1.json --pretty
+npx @plantagoai/yoursim-engine run docs/examples/mm1.json --pretty
 # utilization ≈ 0.8 on "svc"; avgWait ≈ 32 on "q"
 ```
 
