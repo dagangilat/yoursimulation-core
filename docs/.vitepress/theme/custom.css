@@ -19,6 +19,27 @@
   --vp-c-brand-soft: rgba(45, 212, 191, 0.16);
 }
 
+/* ── Light theme: dimmer background + near-black text ("Ink on light") ──
+   Scoped to :root:not(.dark) so these never leak into dark mode (a bare
+   :root would override the core .dark vars by source order). */
+:root:not(.dark) {
+  --vp-c-bg: #f3f4f6;
+  --vp-c-bg-alt: #eceef1;
+  --vp-c-bg-soft: #e7e9ed;
+  --vp-c-bg-elv: #f8f9fb;
+
+  --vp-c-text-1: #0c0d10;
+  --vp-c-text-2: #33363d;
+  --vp-c-text-3: #5c606a;
+
+  --vp-c-divider: #d8dbe1;
+  --vp-c-border: #cdd0d7;
+  --vp-c-gutter: #e2e4e8;
+
+  --vp-c-brand-1: #0C6D75;
+  --vp-code-block-bg: #e9ebef;
+}
+
 /* ── Intro Kit (foundation-inspired) ───────────────────────────── */
 .kit { max-width: 860px; margin: 0 auto; padding: 8px 4px 64px; }
 .kit-brand { display: flex; align-items: center; gap: 12px; margin: 8px 0 22px; }
