@@ -72,13 +72,4 @@ aside: false
   </div>
 </div>
 
-<div class="kit-card">
-  <h2>📧 Email me these materials</h2>
-  <div class="kit-email">
-    <input type="email" placeholder="you@organization.org" aria-label="Your email" />
-    <a class="btn" href="mailto:oss@plantagoai.com?subject=YourSim%20Engine%20materials&body=Please%20send%20me%20the%20YourSim%20Engine%20one-pager%20and%20whitepaper.">Send</a>
-  </div>
-  <p class="kit-note">This opens your mail app to request the materials from oss@plantagoai.com. (A self-serve send is on the roadmap.)</p>
-</div>
-
 </div>
