@@ -1,7 +1,20 @@
+<div align="center">
+
+<a href="https://yoursim.plantagoai.com">
+  <img src="docs/public/favicon.svg" alt="YourSimulation" width="84" height="84">
+</a>
+
 # YourSimulation Core
 
-The open-source heart of **YourSimulation** — a discrete-event queue simulator
-with design optimization, plus the Claude Code skill/plugin that drives it.
+**The open-source heart of YourSimulation** — a zero-dependency discrete-event<br>
+queue simulator with design optimization, plus the Claude Code skill/plugin that drives it.
+
+[![Launch the Studio](https://img.shields.io/badge/Studio-Launch%20app-4F46E5?style=flat-square)](https://yoursim.plantagoai.com)
+[![Engine docs](https://img.shields.io/badge/Docs-yoursim--engine.plantagoai.com-0E7490?style=flat-square)](https://yoursim-engine.plantagoai.com)
+[![npm](https://img.shields.io/npm/v/@plantagoai/yoursim-engine?style=flat-square&color=CB3837&logo=npm&logoColor=white)](https://www.npmjs.com/package/@plantagoai/yoursim-engine)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](./LICENSE)
+
+</div>
 
 > Describe a service/queue/network system in plain language → get a validated
 > model → estimate waits, utilization, and throughput → find the cheapest design
