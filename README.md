@@ -23,6 +23,26 @@ queue simulator with design optimization, plus the Claude Code skill/plugin that
 **License: [MIT](./LICENSE)** — free to use, fork, and commercialize, no strings
 attached. Built for the public, education, researchers, and consultants.
 
+## YourSimulation Studio
+
+**[▶ Launch the Studio — free, in your browser](https://yoursim.plantagoai.com)**
+
+The open core in this repo also powers **YourSimulation Studio** — a free,
+browser-based visual model editor, experiment runner, and optimizer. No install,
+no account: open the page and start modeling. Build any service / queue / network
+system from 12 blocks, get waits, utilization, and throughput with 95% confidence
+intervals, watch deterministic animated playback, and let a Cross-Entropy
+optimizer find the cheapest design that meets your service target. **Free to
+use.** Try it on a worked example — airport security, hospital triage, a bank
+branch, a factory line with breakdowns, a saturated restaurant, or a 100k-client
+CDN network.
+
+**Explore:**
+[Documentation](https://yoursim-engine.plantagoai.com) ·
+[Tutorial](https://yoursim-engine.plantagoai.com/tutorial) ·
+[Examples](https://yoursim-engine.plantagoai.com/examples) ·
+[Intro Kit](https://yoursim-engine.plantagoai.com/kit)
+
 ## What's in here
 
 | Path | What it is |

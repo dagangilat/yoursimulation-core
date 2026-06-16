@@ -18,6 +18,8 @@ export default defineConfig({
   ],
   themeConfig: {
     logo: '/favicon.svg',
+    // Clicking the nav logo/title goes to the Studio app (not the docs home).
+    logoLink: 'https://yoursim.plantagoai.com',
     nav: [
       { text: 'Intro Kit', link: '/kit' },
       { text: 'API & CLI', link: '/api' },
